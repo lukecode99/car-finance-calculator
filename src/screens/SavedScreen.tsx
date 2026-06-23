@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, spacing, radius, font } from '../theme';
 import { SavedComparison, FinanceResult, CarInputs } from '../types';
+import { CarLogo } from '../components/CarLogo';
 
 function gbp(n: number) { return `£${Math.round(Math.abs(n)).toLocaleString('en-GB')}`; }
 function dateFmt(iso: string) {
@@ -23,17 +24,9 @@ export function SavedScreen({ onLoad }: Props) {
   }, []);
 
   async function deleteItem(id: string) {
-    Alert.alert('Delete', 'Remove this saved comparison?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete', style: 'destructive',
-        onPress: async () => {
-          const updated = saved.filter(s => s.id !== id);
-          await AsyncStorage.setItem('saved_comparisons', JSON.stringify(updated));
-          setSaved(updated);
-        },
-      },
-    ]);
+    const updated = saved.filter(s => s.id !== id);
+    await AsyncStorage.setItem('saved_comparisons', JSON.stringify(updated));
+    setSaved(updated);
   }
 
   async function clearAll() {
@@ -81,7 +74,10 @@ export function SavedScreen({ onLoad }: Props) {
             <View key={item.id} style={s.card}>
               <View style={s.cardHeader}>
                 <View style={s.cardTitleBlock}>
-                  <Text style={s.carName}>{item.carName || 'Unnamed Car'}</Text>
+                  <View style={s.carNameRow}>
+                    <CarLogo width={36} height={21} />
+                    <Text style={s.carName}>{item.carName || 'Unnamed Car'}</Text>
+                  </View>
                   {cheapest && (
                     <Text style={s.totalCostLine}>
                       Total cost over {item.termYears} yr{item.termYears !== 1 ? 's' : ''}: {gbp(cheapest.grandTotal)}
@@ -141,7 +137,8 @@ const s = StyleSheet.create({
   card: { backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.sm, borderWidth: 1, borderColor: colors.border },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: spacing.sm },
   cardTitleBlock: { flex: 1 },
-  carName: { color: colors.text, fontSize: font.sizes.md, fontWeight: '700' },
+  carNameRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 2 },
+  carName: { color: colors.text, fontSize: font.sizes.md, fontWeight: '700', flex: 1 },
   totalCostLine: { color: colors.primary, fontSize: font.sizes.sm, fontWeight: '600', marginTop: 2 },
   meta: { color: colors.textMuted, fontSize: font.sizes.xs, marginTop: 2 },
   cardActions: { flexDirection: 'row', justifyContent: 'space-between', marginTop: spacing.sm, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.sm },

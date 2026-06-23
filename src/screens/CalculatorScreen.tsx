@@ -3,16 +3,16 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert, Platform, 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, spacing, radius, font } from '../theme';
-import { CarInputs, DEFAULT_INPUTS, DEPRECIATION_PRESETS, DepreciationPreset, TaxRate, SavedComparison } from '../types';
+import { CarInputs, DEFAULT_INPUTS, DepreciationPreset, TaxRate, SavedComparison } from '../types';
 import { calcAll, getBikRate } from '../engine/financeEngine';
 import { InputField, TextInputField, SliderField, IncludedToggle } from '../components/InputField';
+import { DepreciationSlider } from '../components/DepreciationSlider';
 
 function fmt(n: number, dec = 0) { return n.toLocaleString('en-GB', { minimumFractionDigits: dec, maximumFractionDigits: dec }); }
 function gbp(n: number) { return `£${fmt(Math.abs(n))}`; }
 function pence(n: number) { return `£${fmt(n, 2)}`; }
 
 const TERMS = ['1', '2', '3', '4', '5'];
-const DEP_PRESETS: DepreciationPreset[] = ['high', 'medium', 'low', 'custom'];
 const TAX_RATES: TaxRate[] = ['20', '40', '45'];
 
 const OPTION_LABELS: { key: keyof Pick<CarInputs, 'enablePcp' | 'enableHp' | 'enablePch' | 'enableLoan' | 'enableSalary'>; label: string }[] = [
@@ -119,26 +119,14 @@ export function CalculatorScreen({ onSaved, initialInputs }: Props) {
         {(inputs.enablePcp || inputs.enableHp || inputs.enableLoan) && (
           <View style={s.card}>
             <Text style={s.sectionTitle}>Depreciation</Text>
-            {DEP_PRESETS.map(p => {
-              const info = DEPRECIATION_PRESETS[p];
-              return (
-                <TouchableOpacity key={p} style={[s.depRow, inputs.depreciationPreset === p && s.depRowActive]} onPress={() => setInputs(prev => ({ ...prev, depreciationPreset: p }))}>
-                  <View style={[s.radio, inputs.depreciationPreset === p && s.radioActive]} />
-                  <View style={{ flex: 1 }}>
-                    <Text style={[s.depLabel, inputs.depreciationPreset === p && s.depLabelActive]}>
-                      {info.label}{p !== 'custom' ? ` — Yr1: ${info.y1}%, then ${info.pa}%/yr` : ''}
-                    </Text>
-                    <Text style={s.depDesc}>{info.desc}</Text>
-                  </View>
-                </TouchableOpacity>
-              );
-            })}
-            {inputs.depreciationPreset === 'custom' && (
-              <View style={{ marginTop: spacing.sm }}>
-                <InputField label="Year 1 depreciation" value={inputs.customDepreciationY1} onChangeText={set('customDepreciationY1')} suffix="%" />
-                <InputField label="Year 2+ per year" value={inputs.customDepreciationPA} onChangeText={set('customDepreciationPA')} suffix="%" />
-              </View>
-            )}
+            <DepreciationSlider
+              value={inputs.depreciationPreset}
+              onChange={v => setInputs(p => ({ ...p, depreciationPreset: v }))}
+              customY1={inputs.customDepreciationY1}
+              customPA={inputs.customDepreciationPA}
+              onCustomY1={set('customDepreciationY1')}
+              onCustomPA={set('customDepreciationPA')}
+            />
           </View>
         )}
 

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 28" width="48" height="28">
+  <!-- Body -->
+  <rect x="2" y="14" width="44" height="10" rx="3" fill="#BAFF29"/>
+  <!-- Cabin -->
+  <path d="M12 14 L16 6 Q18 4 22 4 L30 4 Q34 4 36 6 L40 14 Z" fill="#BAFF29"/>
+  <!-- Windscreen darkening -->
+  <path d="M18 13 L20 7 Q21 5.5 23 5.5 L29 5.5 Q31 5.5 32 7 L34 13 Z" fill="#1a1a1a" opacity="0.35"/>
+  <!-- Front wheel -->
+  <circle cx="10" cy="24" r="4.5" fill="#111" stroke="#BAFF29" stroke-width="1.5"/>
+  <circle cx="10" cy="24" r="2" fill="#333"/>
+  <!-- Rear wheel -->
+  <circle cx="38" cy="24" r="4.5" fill="#111" stroke="#BAFF29" stroke-width="1.5"/>
+  <circle cx="38" cy="24" r="2" fill="#333"/>
+  <!-- Headlight -->
+  <rect x="43" y="16" width="3" height="2" rx="1" fill="#fffbe6" opacity="0.9"/>
+  <!-- Taillight -->
+  <rect x="2" y="16" width="3" height="2" rx="1" fill="#ff4444" opacity="0.8"/>
+</svg>
