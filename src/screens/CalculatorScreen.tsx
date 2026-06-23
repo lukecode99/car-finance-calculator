@@ -23,9 +23,9 @@ const OPTION_LABELS: { key: keyof Pick<CarInputs, 'enablePcp' | 'enableHp' | 'en
   { key: 'enableSalary', label: 'Salary Sacrifice' },
 ];
 
-interface Props { onSaved: () => void; initialInputs?: CarInputs; }
+interface Props { onSaved: () => void; initialInputs?: CarInputs; editingId?: string; }
 
-export function CalculatorScreen({ onSaved, initialInputs }: Props) {
+export function CalculatorScreen({ onSaved, initialInputs, editingId }: Props) {
   const [inputs, setInputs] = useState<CarInputs>(initialInputs ?? DEFAULT_INPUTS);
   const [showYearly, setShowYearly] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -49,7 +49,7 @@ export function CalculatorScreen({ onSaved, initialInputs }: Props) {
     try {
       const existing = JSON.parse(await AsyncStorage.getItem('saved_comparisons') || '[]') as SavedComparison[];
       const entry: SavedComparison = {
-        id: Date.now().toString(),
+        id: editingId ?? Date.now().toString(),
         savedAt: new Date().toISOString(),
         carName: inputs.carName || 'Unnamed Car',
         carPrice: parseFloat(inputs.carPrice),
@@ -57,9 +57,11 @@ export function CalculatorScreen({ onSaved, initialInputs }: Props) {
         results,
         inputs,
       };
-      existing.unshift(entry);
-      await AsyncStorage.setItem('saved_comparisons', JSON.stringify(existing.slice(0, 20)));
-      Alert.alert('Saved', 'Comparison saved successfully.');
+      const updated = editingId
+        ? existing.map(e => e.id === editingId ? entry : e)
+        : [entry, ...existing].slice(0, 20);
+      await AsyncStorage.setItem('saved_comparisons', JSON.stringify(updated));
+      Alert.alert(editingId ? 'Updated' : 'Saved', editingId ? 'Comparison updated.' : 'Comparison saved successfully.');
       onSaved();
     } catch {
       Alert.alert('Error', 'Could not save comparison.');
@@ -260,7 +262,7 @@ export function CalculatorScreen({ onSaved, initialInputs }: Props) {
             <View style={s.resultsHeader}>
               <Text style={s.resultsTitle}>Results — {inputs.termYears} year{inputs.termYears !== '1' ? 's' : ''}</Text>
               <TouchableOpacity style={s.saveBtn} onPress={saveComparison} disabled={saving}>
-                <Text style={s.saveBtnText}>{saving ? 'Saving…' : '💾 Save'}</Text>
+                <Text style={s.saveBtnText}>{saving ? (editingId ? 'Updating…' : 'Saving…') : editingId ? '💾 Update' : '💾 Save'}</Text>
               </TouchableOpacity>
             </View>
 

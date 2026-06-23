@@ -12,7 +12,7 @@ function dateFmt(iso: string) {
   return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
-interface Props { onLoad?: (inputs: CarInputs) => void; }
+interface Props { onLoad?: (inputs: CarInputs, savedId: string) => void; }
 
 export function SavedScreen({ onLoad }: Props) {
   const [saved, setSaved] = useState<SavedComparison[]>([]);
@@ -107,7 +107,7 @@ export function SavedScreen({ onLoad }: Props) {
 
               <View style={s.cardActions}>
                 {item.inputs && onLoad ? (
-                  <TouchableOpacity style={s.actionBtn} onPress={() => onLoad(item.inputs!)}>
+                  <TouchableOpacity style={s.actionBtn} onPress={() => onLoad(item.inputs!, item.id)}>
                     <Text style={s.actionBtnText}>Edit / View</Text>
                   </TouchableOpacity>
                 ) : <View />}

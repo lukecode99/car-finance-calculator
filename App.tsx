@@ -11,10 +11,10 @@ type Tab = 'calc' | 'saved' | 'help';
 
 export default function App() {
   const [tab, setTab] = React.useState<Tab>('calc');
-  const [loadedInputs, setLoadedInputs] = React.useState<{ inputs: CarInputs; key: number } | null>(null);
+  const [loadedInputs, setLoadedInputs] = React.useState<{ inputs: CarInputs; key: number; savedId?: string } | null>(null);
 
-  function handleLoad(inputs: CarInputs) {
-    setLoadedInputs(prev => ({ inputs, key: (prev?.key ?? 0) + 1 }));
+  function handleLoad(inputs: CarInputs, savedId?: string) {
+    setLoadedInputs(prev => ({ inputs, key: (prev?.key ?? 0) + 1, savedId }));
     setTab('calc');
   }
 
@@ -27,6 +27,7 @@ export default function App() {
               key={loadedInputs?.key ?? 0}
               onSaved={() => {}}
               initialInputs={loadedInputs?.inputs}
+              editingId={loadedInputs?.savedId}
             />
           )}
           {tab === 'saved' && <SavedScreen onLoad={handleLoad} />}
