@@ -5,7 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, spacing, radius, font } from '../theme';
 import { CarInputs, DEFAULT_INPUTS, DEPRECIATION_PRESETS, DepreciationPreset, TaxRate, SavedComparison } from '../types';
 import { calcAll, getBikRate } from '../engine/financeEngine';
-import { InputField, TextInputField, SliderField } from '../components/InputField';
+import { InputField, TextInputField, SliderField, IncludedToggle } from '../components/InputField';
 
 function fmt(n: number, dec = 0) { return n.toLocaleString('en-GB', { minimumFractionDigits: dec, maximumFractionDigits: dec }); }
 function gbp(n: number) { return `£${fmt(Math.abs(n))}`; }
@@ -18,7 +18,7 @@ const TAX_RATES: TaxRate[] = ['20', '40', '45'];
 const OPTION_LABELS: { key: keyof Pick<CarInputs, 'enablePcp' | 'enableHp' | 'enablePch' | 'enableLoan' | 'enableSalary'>; label: string }[] = [
   { key: 'enablePcp', label: 'PCP' },
   { key: 'enableHp', label: 'HP' },
-  { key: 'enablePch', label: 'Contract Hire' },
+  { key: 'enablePch', label: 'Lease / PCH' },
   { key: 'enableLoan', label: 'Bank Loan' },
   { key: 'enableSalary', label: 'Salary Sacrifice' },
 ];
@@ -71,7 +71,7 @@ export function CalculatorScreen({ onSaved }: Props) {
     <SafeAreaView style={s.safe} edges={['top']}>
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={s.content}>
         <Text style={s.title}>Car Finance Calculator</Text>
-        <Text style={s.subtitle}>Compare PCP · HP · Contract Hire · Bank Loan · Salary Sacrifice</Text>
+        <Text style={s.subtitle}>Compare PCP · HP · Lease/PCH · Bank Loan · Salary Sacrifice</Text>
 
         {/* Car Details */}
         <View style={s.card}>
@@ -153,6 +153,10 @@ export function CalculatorScreen({ onSaved }: Props) {
             <InputField label="Balloon Payment (GMFV)" value={inputs.balloon} onChangeText={set('balloon')} prefix="£" hint="Guaranteed minimum future value at end of term" />
             <InputField label="Mileage included per year" value={inputs.pcpMileageIncluded} onChangeText={set('pcpMileageIncluded')} suffix="mi" hint="Agreement annual mileage allowance" />
             <InputField label="Excess mileage rate" value={inputs.pcpExcessPpm} onChangeText={set('pcpExcessPpm')} suffix="p/mi" hint="Pence per excess mile charged at end of term" />
+            <IncludedToggle label="Insurance" value={inputs.pcpInsuranceIncluded} onChange={setB('pcpInsuranceIncluded')} />
+            <IncludedToggle label="Road Tax" value={inputs.pcpRoadTaxIncluded} onChange={setB('pcpRoadTaxIncluded')} />
+            <IncludedToggle label="Service & Maintenance" value={inputs.pcpServiceIncluded} onChange={setB('pcpServiceIncluded')} />
+            <IncludedToggle label="Tyres" value={inputs.pcpTyresIncluded} onChange={setB('pcpTyresIncluded')} />
             <TextInputField label="Provider (optional)" value={inputs.pcpProvider} onChangeText={set('pcpProvider')} placeholder="e.g. Volkswagen Financial Services" />
             <TextInputField label="Provider URL (optional)" value={inputs.pcpProviderUrl} onChangeText={set('pcpProviderUrl')} placeholder="https://..." />
           </View>
@@ -168,6 +172,10 @@ export function CalculatorScreen({ onSaved }: Props) {
             <InputField label="Deposit" value={inputs.hpDeposit} onChangeText={set('hpDeposit')} prefix="£" />
             <InputField label="APR" value={inputs.hpApr} onChangeText={set('hpApr')} suffix="%" hint="Representative APR from dealer/lender" />
             <Text style={s.cardNote}>No balloon — you own the car at end of term. No mileage restrictions.</Text>
+            <IncludedToggle label="Insurance" value={inputs.hpInsuranceIncluded} onChange={setB('hpInsuranceIncluded')} />
+            <IncludedToggle label="Road Tax" value={inputs.hpRoadTaxIncluded} onChange={setB('hpRoadTaxIncluded')} />
+            <IncludedToggle label="Service & Maintenance" value={inputs.hpServiceIncluded} onChange={setB('hpServiceIncluded')} />
+            <IncludedToggle label="Tyres" value={inputs.hpTyresIncluded} onChange={setB('hpTyresIncluded')} />
             <TextInputField label="Provider (optional)" value={inputs.hpProvider} onChangeText={set('hpProvider')} placeholder="e.g. Black Horse Finance" />
             <TextInputField label="Provider URL (optional)" value={inputs.hpProviderUrl} onChangeText={set('hpProviderUrl')} placeholder="https://..." />
           </View>
@@ -178,12 +186,16 @@ export function CalculatorScreen({ onSaved }: Props) {
           <View style={s.card}>
             <View style={s.cardHeaderRow}>
               <View style={[s.typeDot, { backgroundColor: colors.pch }]} />
-              <Text style={s.sectionTitle}>Contract Hire (PCH)</Text>
+              <Text style={s.sectionTitle}>Lease / Contract Hire (PCH)</Text>
             </View>
             <InputField label="Initial Rental (deposit)" value={inputs.pchDeposit} onChangeText={set('pchDeposit')} prefix="£" hint="Typically 3–9 months upfront" />
             <InputField label="Monthly Payment" value={inputs.pchMonthly} onChangeText={set('pchMonthly')} prefix="£" hint="Monthly inc. VAT" />
             <InputField label="Mileage included per year" value={inputs.pchMileageIncluded} onChangeText={set('pchMileageIncluded')} suffix="mi" hint="Agreement annual mileage allowance" />
             <InputField label="Excess mileage rate" value={inputs.pchExcessPpm} onChangeText={set('pchExcessPpm')} suffix="p/mi" hint="Pence per excess mile charged at end of term" />
+            <IncludedToggle label="Insurance" value={inputs.pchInsuranceIncluded} onChange={setB('pchInsuranceIncluded')} />
+            <IncludedToggle label="Road Tax" value={inputs.pchRoadTaxIncluded} onChange={setB('pchRoadTaxIncluded')} />
+            <IncludedToggle label="Service & Maintenance" value={inputs.pchServiceIncluded} onChange={setB('pchServiceIncluded')} />
+            <IncludedToggle label="Tyres" value={inputs.pchTyresIncluded} onChange={setB('pchTyresIncluded')} />
             <TextInputField label="Provider (optional)" value={inputs.pchProvider} onChangeText={set('pchProvider')} placeholder="e.g. Leaseplan" />
             <TextInputField label="Provider URL (optional)" value={inputs.pchProviderUrl} onChangeText={set('pchProviderUrl')} placeholder="https://..." />
           </View>
@@ -228,20 +240,10 @@ export function CalculatorScreen({ onSaved }: Props) {
                 </TouchableOpacity>
               ))}
             </View>
-            {([
-              { key: 'ssInsuranceIncluded' as keyof CarInputs, label: 'Insurance' },
-              { key: 'ssServiceIncluded' as keyof CarInputs, label: 'Service & Maintenance' },
-              { key: 'ssTyresIncluded' as keyof CarInputs, label: 'Tyres' },
-            ] as { key: keyof CarInputs; label: string }[]).map(({ key, label }) => (
-              <View key={key} style={s.labelRow}>
-                <Text style={s.fieldLabel}>{label} included?</Text>
-                <TouchableOpacity style={[s.toggleBtn, inputs[key] && s.toggleBtnActive]} onPress={toggle(key)}>
-                  <Text style={[s.toggleBtnText, inputs[key] && s.toggleBtnTextActive]}>
-                    {inputs[key] ? 'Included' : 'I pay separately'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            ))}
+            <IncludedToggle label="Insurance" value={inputs.ssInsuranceIncluded} onChange={setB('ssInsuranceIncluded')} />
+            <IncludedToggle label="Road Tax" value={inputs.ssRoadTaxIncluded} onChange={setB('ssRoadTaxIncluded')} />
+            <IncludedToggle label="Service & Maintenance" value={inputs.ssServiceIncluded} onChange={setB('ssServiceIncluded')} />
+            <IncludedToggle label="Tyres" value={inputs.ssTyresIncluded} onChange={setB('ssTyresIncluded')} />
             <TextInputField label="Provider (optional)" value={inputs.ssProvider} onChangeText={set('ssProvider')} placeholder="e.g. Octopus EV" />
             <TextInputField label="Provider URL (optional)" value={inputs.ssProviderUrl} onChangeText={set('ssProviderUrl')} placeholder="https://..." />
           </View>
@@ -253,7 +255,7 @@ export function CalculatorScreen({ onSaved }: Props) {
           <InputField label="Insurance (annual)" value={inputs.insurance} onChangeText={set('insurance')} prefix="£"
             hint={inputs.enableSalary && inputs.ssInsuranceIncluded ? 'Excluded from Salary Sacrifice total (included in scheme)' : undefined} />
           <InputField label="Road Tax (annual)" value={inputs.roadTax} onChangeText={set('roadTax')} prefix="£"
-            hint={inputs.enableSalary ? 'Usually included in salary sacrifice scheme' : undefined} />
+            hint={inputs.enableSalary && inputs.ssRoadTaxIncluded ? 'Excluded from Salary Sacrifice total (included in scheme)' : undefined} />
           <InputField label="Servicing & Maintenance (annual)" value={inputs.maintenance} onChangeText={set('maintenance')} prefix="£"
             hint={inputs.enableSalary && inputs.ssServiceIncluded ? 'Excluded from Salary Sacrifice total (included in scheme)' : undefined} />
           <InputField label="Tyres (annual allowance)" value={inputs.tyresPerYear} onChangeText={set('tyresPerYear')} prefix="£"

@@ -60,10 +60,10 @@ function calcPCP(inputs: CarInputs, termYears: number): FinanceResult | null {
   const deposit = n(inputs.pcpDeposit);
   const apr = n(inputs.pcpApr);
   const balloon = n(inputs.balloon);
-  const insurance = n(inputs.insurance);
-  const roadTax = n(inputs.roadTax);
-  const maintenance = n(inputs.maintenance);
-  const tyresPerYear = n(inputs.tyresPerYear);
+  const insurance = inputs.pcpInsuranceIncluded ? 0 : n(inputs.insurance);
+  const roadTax = inputs.pcpRoadTaxIncluded ? 0 : n(inputs.roadTax);
+  const maintenance = inputs.pcpServiceIncluded ? 0 : n(inputs.maintenance);
+  const tyresPerYear = inputs.pcpTyresIncluded ? 0 : n(inputs.tyresPerYear);
   const sellingCost = n(inputs.sellingCost);
   const mileage = n(inputs.annualMileage);
   const mileageIncluded = n(inputs.pcpMileageIncluded);
@@ -121,10 +121,10 @@ function calcHP(inputs: CarInputs, termYears: number): FinanceResult | null {
   const price = n(inputs.carPrice);
   const deposit = n(inputs.hpDeposit);
   const apr = n(inputs.hpApr);
-  const insurance = n(inputs.insurance);
-  const roadTax = n(inputs.roadTax);
-  const maintenance = n(inputs.maintenance);
-  const tyresPerYear = n(inputs.tyresPerYear);
+  const insurance = inputs.hpInsuranceIncluded ? 0 : n(inputs.insurance);
+  const roadTax = inputs.hpRoadTaxIncluded ? 0 : n(inputs.roadTax);
+  const maintenance = inputs.hpServiceIncluded ? 0 : n(inputs.maintenance);
+  const tyresPerYear = inputs.hpTyresIncluded ? 0 : n(inputs.tyresPerYear);
   const sellingCost = n(inputs.sellingCost);
   const mileage = n(inputs.annualMileage);
 
@@ -172,10 +172,10 @@ function calcHP(inputs: CarInputs, termYears: number): FinanceResult | null {
 function calcPCH(inputs: CarInputs, termYears: number): FinanceResult | null {
   const pchDeposit = n(inputs.pchDeposit);
   const pchMonthly = n(inputs.pchMonthly);
-  const insurance = n(inputs.insurance);
-  const roadTax = n(inputs.roadTax);
-  const maintenance = n(inputs.maintenance);
-  const tyresPerYear = n(inputs.tyresPerYear);
+  const insurance = inputs.pchInsuranceIncluded ? 0 : n(inputs.insurance);
+  const roadTax = inputs.pchRoadTaxIncluded ? 0 : n(inputs.roadTax);
+  const maintenance = inputs.pchServiceIncluded ? 0 : n(inputs.maintenance);
+  const tyresPerYear = inputs.pchTyresIncluded ? 0 : n(inputs.tyresPerYear);
   const mileage = n(inputs.annualMileage);
   const mileageIncluded = n(inputs.pchMileageIncluded);
   const excessPpm = n(inputs.pchExcessPpm);
@@ -202,7 +202,7 @@ function calcPCH(inputs: CarInputs, termYears: number): FinanceResult | null {
   const totalMiles = mileage * termYears;
 
   return {
-    type: 'pch', label: 'Contract Hire', color: colors.pch,
+    type: 'pch', label: 'Lease / Contract Hire', color: colors.pch,
     monthlyPayment: pchMonthly, totalFinanceCost: totalLease,
     totalRunningCosts: totalRunning, totalDepreciation: 0, sellingCost: 0,
     grandTotal, excessMileageCost,
@@ -293,9 +293,10 @@ function calcSalary(inputs: CarInputs, termYears: number): FinanceResult | null 
 
   // Running costs — items bundled in scheme are excluded
   const insurance = inputs.ssInsuranceIncluded ? 0 : n(inputs.insurance);
+  const roadTax = inputs.ssRoadTaxIncluded ? 0 : n(inputs.roadTax);
   const maintenance = inputs.ssServiceIncluded ? 0 : n(inputs.maintenance);
   const tyres = inputs.ssTyresIncluded ? 0 : n(inputs.tyresPerYear);
-  const annualRunning = insurance + n(inputs.roadTax) + maintenance + tyres;
+  const annualRunning = insurance + roadTax + maintenance + tyres;
   const totalRunning = annualRunning * termYears;
 
   // Upfront deposit net of tax/NI

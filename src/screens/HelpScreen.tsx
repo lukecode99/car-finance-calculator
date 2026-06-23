@@ -35,7 +35,7 @@ const SECTIONS: Section[] = [
     ],
   },
   {
-    title: 'Contract Hire (PCH)',
+    title: 'Lease / Contract Hire (PCH)',
     color: '#FFB74D',
     paras: [
       'You rent the car for a fixed period and return it at the end. You never own it. Typically the cheapest monthly option because you\'re only paying for depreciation during your term.',
@@ -111,7 +111,7 @@ export function HelpScreen() {
     <SafeAreaView style={s.safe} edges={['top']}>
       <ScrollView contentContainerStyle={s.content}>
         <Text style={s.pageTitle}>Finance Guide</Text>
-        <Text style={s.intro}>Understanding PCP, HP, Contract Hire, Bank Loan and Salary Sacrifice — and which one wins for you.</Text>
+        <Text style={s.intro}>Understanding PCP, HP, Lease / Contract Hire, Bank Loan and Salary Sacrifice — and which one wins for you.</Text>
 
         {SECTIONS.map(sec => (
           <View key={sec.title} style={s.section}>

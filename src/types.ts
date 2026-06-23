@@ -24,12 +24,20 @@ export interface CarInputs {
   balloon: string;
   pcpMileageIncluded: string;
   pcpExcessPpm: string;   // pence per excess mile
+  pcpInsuranceIncluded: boolean;
+  pcpRoadTaxIncluded: boolean;
+  pcpServiceIncluded: boolean;
+  pcpTyresIncluded: boolean;
   pcpProvider: string;
   pcpProviderUrl: string;
 
   // HP (own deposit + APR)
   hpDeposit: string;
   hpApr: string;
+  hpInsuranceIncluded: boolean;
+  hpRoadTaxIncluded: boolean;
+  hpServiceIncluded: boolean;
+  hpTyresIncluded: boolean;
   hpProvider: string;
   hpProviderUrl: string;
 
@@ -38,6 +46,10 @@ export interface CarInputs {
   pchMonthly: string;
   pchMileageIncluded: string;
   pchExcessPpm: string;
+  pchInsuranceIncluded: boolean;
+  pchRoadTaxIncluded: boolean;
+  pchServiceIncluded: boolean;
+  pchTyresIncluded: boolean;
   pchProvider: string;
   pchProviderUrl: string;
 
@@ -53,6 +65,7 @@ export interface CarInputs {
   ssCo2: string;
   ssMonthly: string;
   ssInsuranceIncluded: boolean;
+  ssRoadTaxIncluded: boolean;
   ssServiceIncluded: boolean;
   ssTyresIncluded: boolean;
   ssTaxRate: TaxRate;
@@ -130,11 +143,19 @@ export const DEFAULT_INPUTS: CarInputs = {
   balloon: '14000',
   pcpMileageIncluded: '10000',
   pcpExcessPpm: '7',
+  pcpInsuranceIncluded: false,
+  pcpRoadTaxIncluded: false,
+  pcpServiceIncluded: false,
+  pcpTyresIncluded: false,
   pcpProvider: '',
   pcpProviderUrl: '',
 
   hpDeposit: '3000',
   hpApr: '6.9',
+  hpInsuranceIncluded: false,
+  hpRoadTaxIncluded: false,
+  hpServiceIncluded: false,
+  hpTyresIncluded: false,
   hpProvider: '',
   hpProviderUrl: '',
 
@@ -142,6 +163,10 @@ export const DEFAULT_INPUTS: CarInputs = {
   pchMonthly: '173',
   pchMileageIncluded: '10000',
   pchExcessPpm: '10',
+  pchInsuranceIncluded: false,
+  pchRoadTaxIncluded: true,
+  pchServiceIncluded: false,
+  pchTyresIncluded: false,
   pchProvider: '',
   pchProviderUrl: '',
 
@@ -155,6 +180,7 @@ export const DEFAULT_INPUTS: CarInputs = {
   ssCo2: '120',
   ssMonthly: '350',
   ssInsuranceIncluded: false,
+  ssRoadTaxIncluded: true,
   ssServiceIncluded: false,
   ssTyresIncluded: false,
   ssTaxRate: '20',

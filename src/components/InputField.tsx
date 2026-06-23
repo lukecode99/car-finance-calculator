@@ -106,6 +106,50 @@ export function SliderField({ label, value, onChange, min, max, step, format }: 
   );
 }
 
+interface IncludedToggleProps {
+  label: string;
+  value: boolean;
+  onChange: (v: boolean) => void;
+}
+
+export function IncludedToggle({ label, value, onChange }: IncludedToggleProps) {
+  return (
+    <View style={itStyles.row}>
+      <Text style={itStyles.label}>{label}</Text>
+      <View style={itStyles.pills}>
+        <TouchableOpacity
+          style={[itStyles.pill, itStyles.pillLeft, value && itStyles.pillActive]}
+          onPress={() => onChange(true)}
+        >
+          <Text style={[itStyles.pillText, value && itStyles.pillTextActive]}>Included</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[itStyles.pill, itStyles.pillRight, !value && itStyles.pillActive]}
+          onPress={() => onChange(false)}
+        >
+          <Text style={[itStyles.pillText, !value && itStyles.pillTextActive]}>Paid separately</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
+const itStyles = StyleSheet.create({
+  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.sm, minHeight: 36 },
+  label: { color: colors.textSecondary, fontSize: font.sizes.sm, flex: 1, marginRight: spacing.sm },
+  pills: { flexDirection: 'row' },
+  pill: {
+    paddingVertical: 7, paddingHorizontal: 12,
+    borderWidth: 1, borderColor: colors.border,
+    backgroundColor: colors.inputBg,
+  },
+  pillLeft: { borderTopLeftRadius: radius.sm, borderBottomLeftRadius: radius.sm, borderRightWidth: 0 },
+  pillRight: { borderTopRightRadius: radius.sm, borderBottomRightRadius: radius.sm },
+  pillActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  pillText: { color: colors.textSecondary, fontSize: font.sizes.xs, fontWeight: '600' },
+  pillTextActive: { color: '#000' },
+});
+
 const styles = StyleSheet.create({
   wrapper: { marginBottom: spacing.sm },
   label: { color: colors.textSecondary, fontSize: font.sizes.sm, marginBottom: 4 },
