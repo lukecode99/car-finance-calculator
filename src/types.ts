@@ -53,6 +53,8 @@ export interface CarInputs {
   ssCo2: string;
   ssMonthly: string;
   ssInsuranceIncluded: boolean;
+  ssServiceIncluded: boolean;
+  ssTyresIncluded: boolean;
   ssTaxRate: TaxRate;
   ssProvider: string;
   ssProviderUrl: string;
@@ -153,6 +155,8 @@ export const DEFAULT_INPUTS: CarInputs = {
   ssCo2: '120',
   ssMonthly: '350',
   ssInsuranceIncluded: false,
+  ssServiceIncluded: false,
+  ssTyresIncluded: false,
   ssTaxRate: '20',
   ssProvider: '',
   ssProviderUrl: '',

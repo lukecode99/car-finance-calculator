@@ -228,14 +228,20 @@ export function CalculatorScreen({ onSaved }: Props) {
                 </TouchableOpacity>
               ))}
             </View>
-            <View style={s.labelRow}>
-              <Text style={s.fieldLabel}>Insurance included in scheme?</Text>
-              <TouchableOpacity style={[s.toggleBtn, inputs.ssInsuranceIncluded && s.toggleBtnActive]} onPress={toggle('ssInsuranceIncluded')}>
-                <Text style={[s.toggleBtnText, inputs.ssInsuranceIncluded && s.toggleBtnTextActive]}>
-                  {inputs.ssInsuranceIncluded ? 'Yes — included' : 'No — I pay separately'}
-                </Text>
-              </TouchableOpacity>
-            </View>
+            {([
+              { key: 'ssInsuranceIncluded' as keyof CarInputs, label: 'Insurance' },
+              { key: 'ssServiceIncluded' as keyof CarInputs, label: 'Service & Maintenance' },
+              { key: 'ssTyresIncluded' as keyof CarInputs, label: 'Tyres' },
+            ] as { key: keyof CarInputs; label: string }[]).map(({ key, label }) => (
+              <View key={key} style={s.labelRow}>
+                <Text style={s.fieldLabel}>{label} included?</Text>
+                <TouchableOpacity style={[s.toggleBtn, inputs[key] && s.toggleBtnActive]} onPress={toggle(key)}>
+                  <Text style={[s.toggleBtnText, inputs[key] && s.toggleBtnTextActive]}>
+                    {inputs[key] ? 'Included' : 'I pay separately'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            ))}
             <TextInputField label="Provider (optional)" value={inputs.ssProvider} onChangeText={set('ssProvider')} placeholder="e.g. Octopus EV" />
             <TextInputField label="Provider URL (optional)" value={inputs.ssProviderUrl} onChangeText={set('ssProviderUrl')} placeholder="https://..." />
           </View>
@@ -245,10 +251,13 @@ export function CalculatorScreen({ onSaved }: Props) {
         <View style={s.card}>
           <Text style={s.sectionTitle}>Annual Running Costs</Text>
           <InputField label="Insurance (annual)" value={inputs.insurance} onChangeText={set('insurance')} prefix="£"
-            hint={inputs.enableSalary && inputs.ssInsuranceIncluded ? 'Note: excluded from Salary Sacrifice (included in scheme)' : undefined} />
-          <InputField label="Road Tax (annual)" value={inputs.roadTax} onChangeText={set('roadTax')} prefix="£" />
-          <InputField label="Servicing & Maintenance (annual)" value={inputs.maintenance} onChangeText={set('maintenance')} prefix="£" />
-          <InputField label="Tyres (annual allowance)" value={inputs.tyresPerYear} onChangeText={set('tyresPerYear')} prefix="£" />
+            hint={inputs.enableSalary && inputs.ssInsuranceIncluded ? 'Excluded from Salary Sacrifice total (included in scheme)' : undefined} />
+          <InputField label="Road Tax (annual)" value={inputs.roadTax} onChangeText={set('roadTax')} prefix="£"
+            hint={inputs.enableSalary ? 'Usually included in salary sacrifice scheme' : undefined} />
+          <InputField label="Servicing & Maintenance (annual)" value={inputs.maintenance} onChangeText={set('maintenance')} prefix="£"
+            hint={inputs.enableSalary && inputs.ssServiceIncluded ? 'Excluded from Salary Sacrifice total (included in scheme)' : undefined} />
+          <InputField label="Tyres (annual allowance)" value={inputs.tyresPerYear} onChangeText={set('tyresPerYear')} prefix="£"
+            hint={inputs.enableSalary && inputs.ssTyresIncluded ? 'Excluded from Salary Sacrifice total (included in scheme)' : undefined} />
           {(inputs.enablePcp || inputs.enableHp || inputs.enableLoan) && (
             <InputField label="Selling Cost (PCP/HP/Loan only)" value={inputs.sellingCost} onChangeText={set('sellingCost')} prefix="£" hint="Dealer/broker commission when you sell at end of term" />
           )}

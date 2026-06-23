@@ -291,9 +291,11 @@ function calcSalary(inputs: CarInputs, termYears: number): FinanceResult | null 
 
   const effectiveMonthly = monthlyNetSacrifice + monthlyBikTax;
 
-  // Running costs — insurance may be bundled in the scheme
+  // Running costs — items bundled in scheme are excluded
   const insurance = inputs.ssInsuranceIncluded ? 0 : n(inputs.insurance);
-  const annualRunning = insurance + n(inputs.roadTax) + n(inputs.maintenance) + n(inputs.tyresPerYear);
+  const maintenance = inputs.ssServiceIncluded ? 0 : n(inputs.maintenance);
+  const tyres = inputs.ssTyresIncluded ? 0 : n(inputs.tyresPerYear);
+  const annualRunning = insurance + n(inputs.roadTax) + maintenance + tyres;
   const totalRunning = annualRunning * termYears;
 
   // Upfront deposit net of tax/NI
