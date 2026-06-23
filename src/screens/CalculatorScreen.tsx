@@ -12,18 +12,6 @@ function fmt(n: number, dec = 0) { return n.toLocaleString('en-GB', { minimumFra
 function gbp(n: number) { return `£${fmt(Math.abs(n))}`; }
 function pence(n: number) { return `£${fmt(n, 2)}`; }
 
-function getDepositAmount(type: string, inputs: CarInputs): number {
-  const price = parseFloat(inputs.carPrice) || 0;
-  switch (type) {
-    case 'pcp': return parseFloat(inputs.pcpDeposit) || 0;
-    case 'hp': return parseFloat(inputs.hpDeposit) || 0;
-    case 'pch': return parseFloat(inputs.pchDeposit) || 0;
-    case 'loan': return Math.round(price * (parseFloat(inputs.loanDepositPct) || 0) / 100);
-    case 'salary': return parseFloat(inputs.ssDeposit) || 0;
-    default: return 0;
-  }
-}
-
 const TERMS = ['1', '2', '3', '4', '5'];
 const TAX_RATES: TaxRate[] = ['20', '40', '45'];
 
@@ -147,8 +135,8 @@ export function CalculatorScreen({ onSaved, initialInputs, editingId, onReset }:
               customPA={inputs.customDepreciationPA}
               onCustomY1={set('customDepreciationY1')}
               onCustomPA={set('customDepreciationPA')}
-              customResidualValue={inputs.customResidualValue ?? ''}
-              onCustomResidualValue={set('customResidualValue')}
+              customResidual={inputs.customResidualValue ?? ''}
+              onCustomResidual={set('customResidualValue')}
             />
           </View>
         )}
@@ -222,17 +210,15 @@ export function CalculatorScreen({ onSaved, initialInputs, editingId, onReset }:
             </View>
             <Text style={s.cardNote}>Borrow from your bank, own the car outright from day one. No mileage limits.</Text>
             <SliderField
-              label="Deposit / Loan split"
-              value={inputs.loanDepositPct ?? '0'}
+              label="Deposit"
+              value={inputs.loanDepositPct ?? '10'}
               onChange={set('loanDepositPct')}
-              min={0}
-              max={50}
-              step={5}
+              min={0} max={50} step={5}
               format={v => {
                 const price = parseFloat(inputs.carPrice) || 0;
                 const dep = Math.round(price * v / 100);
                 const loan = price - dep;
-                return `${v}% dep · ${gbp(dep)} / ${gbp(loan)} loan`;
+                return `${v}% · £${dep.toLocaleString('en-GB')} dep / £${loan.toLocaleString('en-GB')} loan`;
               }}
             />
             <InputField label="APR" value={inputs.loanApr} onChangeText={set('loanApr')} suffix="%" hint="Personal loan APR from your bank" />
@@ -319,8 +305,8 @@ export function CalculatorScreen({ onSaved, initialInputs, editingId, onReset }:
                         <Text style={[s.providerText, r.providerUrl && s.providerLink]}>{r.provider}{r.providerUrl ? ' ↗' : ''}</Text>
                       </TouchableOpacity>
                     ) : null}
-                    {getDepositAmount(r.type, inputs) > 0 && (
-                      <Text style={s.depositNote}>Deposit required: {gbp(getDepositAmount(r.type, inputs))}</Text>
+                    {r.depositRequired !== undefined && r.depositRequired >= 0 && (
+                      <Text style={s.depositNote}>Deposit required: {gbp(r.depositRequired)}</Text>
                     )}
                   </View>
                   <Text style={s.resultTotal}>{gbp(r.grandTotal)}<Text style={s.resultTotalLabel}> total</Text></Text>
@@ -343,10 +329,8 @@ export function CalculatorScreen({ onSaved, initialInputs, editingId, onReset }:
                   )}
                 </View>
 
-                {r.type === 'loan' && r.yearlyBreakdown.length > 0 && (
-                  <Text style={s.residualNote}>
-                    You own the car outright — estimated value at end of term: {gbp(r.yearlyBreakdown[r.yearlyBreakdown.length - 1].carValue)}
-                  </Text>
+                {r.type === 'loan' && r.loanResidualValue !== undefined && r.loanResidualValue > 0 && (
+                  <Text style={s.residualNote}>You own the car outright — estimated value at end of term: {gbp(r.loanResidualValue)}</Text>
                 )}
 
                 <TouchableOpacity style={s.yearlyToggle} onPress={() => setShowYearly(showYearly === r.type ? null : r.type)}>
@@ -443,11 +427,11 @@ const s = StyleSheet.create({
   resultType: { fontSize: font.sizes.lg, fontWeight: '700' },
   providerText: { color: colors.textMuted, fontSize: font.sizes.xs, marginTop: 2 },
   providerLink: { color: colors.primary, textDecorationLine: 'underline' },
+  depositNote: { color: colors.textMuted, fontSize: font.sizes.xs, marginTop: 2 },
+  residualNote: { color: colors.textMuted, fontSize: font.sizes.xs, fontStyle: 'italic', marginBottom: spacing.sm },
   resultTotal: { color: colors.text, fontSize: font.sizes.xl, fontWeight: '700' },
   resultTotalLabel: { color: colors.textSecondary, fontSize: font.sizes.sm, fontWeight: '400' },
 
-  depositNote: { color: colors.textMuted, fontSize: font.sizes.xs, marginTop: 2 },
-  residualNote: { color: colors.textMuted, fontSize: font.sizes.xs, fontStyle: 'italic', marginBottom: spacing.xs },
   resultGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginBottom: spacing.sm },
   cell: { width: '48%', backgroundColor: colors.surface2, borderRadius: radius.sm, padding: spacing.sm },
   cellLabel: { color: colors.textMuted, fontSize: font.sizes.xs, marginBottom: 2 },

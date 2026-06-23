@@ -114,6 +114,8 @@ export interface FinanceResult {
   bikRate?: number;
   monthlyBikTax?: number;
   monthlyNetSacrifice?: number;
+  depositRequired?: number;
+  loanResidualValue?: number;
   provider?: string;
   providerUrl?: string;
 }
@@ -174,7 +176,7 @@ export const DEFAULT_INPUTS: CarInputs = {
   pchProviderUrl: '',
 
   loanAmount: '23918',
-  loanDepositPct: '0',
+  loanDepositPct: '10',
   loanApr: '8.9',
   loanProvider: '',
   loanProviderUrl: '',

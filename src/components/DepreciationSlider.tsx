@@ -1,6 +1,5 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
-import Slider from '@react-native-community/slider';
 import { colors, spacing, radius, font } from '../theme';
 import { DepreciationPreset, DEPRECIATION_PRESETS } from '../types';
 import { InputField } from './InputField';
@@ -14,16 +13,20 @@ interface Props {
   customPA: string;
   onCustomY1: (v: string) => void;
   onCustomPA: (v: string) => void;
-  customResidualValue: string;
-  onCustomResidualValue: (v: string) => void;
+  customResidual: string;
+  onCustomResidual: (v: string) => void;
 }
 
-export function DepreciationSlider({ value, onChange, customY1, customPA, onCustomY1, onCustomPA, customResidualValue, onCustomResidualValue }: Props) {
+export function DepreciationSlider({ value, onChange, customY1, customPA, onCustomY1, onCustomPA, customResidual, onCustomResidual }: Props) {
   const idx = ORDER.indexOf(value);
   const info = DEPRECIATION_PRESETS[value];
 
+  function decrement() { if (idx > 0) onChange(ORDER[idx - 1]); }
+  function increment() { if (idx < ORDER.length - 1) onChange(ORDER[idx + 1]); }
+
   return (
     <View>
+      {/* Slider track */}
       {Platform.OS === 'web' ? (
         <input
           type="range"
@@ -35,19 +38,20 @@ export function DepreciationSlider({ value, onChange, customY1, customPA, onCust
           style={{ width: '100%', accentColor: colors.primary, height: 28, cursor: 'pointer', marginTop: 4, marginBottom: 2 }}
         />
       ) : (
-        <Slider
-          style={{ width: '100%', height: 40, marginTop: 4, marginBottom: 2 }}
-          minimumValue={0}
-          maximumValue={ORDER.length - 1}
-          step={1}
-          value={idx}
-          onSlidingComplete={(val) => onChange(ORDER[Math.round(val)])}
-          minimumTrackTintColor={colors.primary}
-          maximumTrackTintColor={colors.surface2}
-          thumbTintColor={colors.primary}
-        />
+        <View style={s.stepRow}>
+          <TouchableOpacity style={[s.stepBtn, idx === 0 && s.stepBtnDisabled]} onPress={decrement} disabled={idx === 0}>
+            <Text style={s.stepBtnText}>‹</Text>
+          </TouchableOpacity>
+          <View style={s.track}>
+            <View style={[s.fill, { width: `${(idx / (ORDER.length - 1)) * 100}%` as any }]} />
+          </View>
+          <TouchableOpacity style={[s.stepBtn, idx === ORDER.length - 1 && s.stepBtnDisabled]} onPress={increment} disabled={idx === ORDER.length - 1}>
+            <Text style={s.stepBtnText}>›</Text>
+          </TouchableOpacity>
+        </View>
       )}
 
+      {/* Tick labels */}
       <View style={s.ticks}>
         {ORDER.map((p, i) => (
           <TouchableOpacity key={p} style={s.tick} onPress={() => onChange(p)}>
@@ -58,18 +62,20 @@ export function DepreciationSlider({ value, onChange, customY1, customPA, onCust
         ))}
       </View>
 
-      <View style={s.infoBox}>
+      {/* Selected info */}
+      <View style={[s.infoBox, { borderColor: colors.primary }]}>
         <Text style={s.infoTitle}>
           {info.label}{value !== 'custom' ? ` — Yr1: ${info.y1}%, then ${info.pa}%/yr` : ''}
         </Text>
         <Text style={s.infoDesc}>{info.desc}</Text>
       </View>
 
+      {/* Custom inputs */}
       {value === 'custom' && (
         <View style={{ marginTop: spacing.sm }}>
-          <InputField label="Estimated value at end of term (£)" value={customResidualValue} onChangeText={onCustomResidualValue} prefix="£" hint="Back-calculates annual depreciation from residual value" />
-          <InputField label="Year 1 depreciation (%)" value={customY1} onChangeText={onCustomY1} suffix="%" hint="Used if no residual value entered above" />
-          <InputField label="Year 2+ per year (%)" value={customPA} onChangeText={onCustomPA} suffix="%" hint="Used if no residual value entered above" />
+          <InputField label="Estimated value at end of term (£)" value={customResidual} onChangeText={onCustomResidual} prefix="£" hint="Overrides Y1%/PA% below if entered" />
+          <InputField label="Year 1 depreciation" value={customY1} onChangeText={onCustomY1} suffix="%" />
+          <InputField label="Year 2+ per year" value={customPA} onChangeText={onCustomPA} suffix="%" />
         </View>
       )}
     </View>
@@ -77,6 +83,15 @@ export function DepreciationSlider({ value, onChange, customY1, customPA, onCust
 }
 
 const s = StyleSheet.create({
+  stepRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4, marginBottom: 2, gap: spacing.sm },
+  stepBtn: {
+    backgroundColor: colors.surface2, borderWidth: 1, borderColor: colors.border,
+    borderRadius: radius.sm, width: 36, height: 36, alignItems: 'center', justifyContent: 'center',
+  },
+  stepBtnDisabled: { opacity: 0.35 },
+  stepBtnText: { color: colors.text, fontSize: 22, fontWeight: '700', lineHeight: 26 },
+  track: { flex: 1, height: 6, backgroundColor: colors.surface2, borderRadius: 3, overflow: 'hidden' },
+  fill: { height: '100%', backgroundColor: colors.primary, borderRadius: 3 },
   ticks: { flexDirection: 'row', marginBottom: spacing.sm },
   tick: { flex: 1, alignItems: 'center' },
   tickLabel: { color: colors.textMuted, fontSize: font.sizes.xs, fontWeight: '600' },
