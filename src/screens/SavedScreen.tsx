@@ -80,18 +80,15 @@ export function SavedScreen({ onLoad }: Props) {
           return (
             <View key={item.id} style={s.card}>
               <View style={s.cardHeader}>
-                <TouchableOpacity style={s.cardTitleBlock} onPress={() => item.inputs && onLoad ? onLoad(item.inputs) : undefined} activeOpacity={item.inputs && onLoad ? 0.6 : 1}>
+                <View style={s.cardTitleBlock}>
                   <Text style={s.carName}>{item.carName || 'Unnamed Car'}</Text>
                   {cheapest && (
                     <Text style={s.totalCostLine}>
                       Total cost over {item.termYears} yr{item.termYears !== 1 ? 's' : ''}: {gbp(cheapest.grandTotal)}
                     </Text>
                   )}
-                  <Text style={s.meta}>{dateFmt(item.savedAt)}{item.inputs && onLoad ? '  · tap to edit →' : ''}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => deleteItem(item.id)}>
-                  <Text style={s.delete}>✕</Text>
-                </TouchableOpacity>
+                  <Text style={s.meta}>{dateFmt(item.savedAt)}</Text>
+                </View>
               </View>
 
               {item.results.map(r => (
@@ -111,6 +108,17 @@ export function SavedScreen({ onLoad }: Props) {
                   </View>
                 </TouchableOpacity>
               ))}
+
+              <View style={s.cardActions}>
+                {item.inputs && onLoad ? (
+                  <TouchableOpacity style={s.actionBtn} onPress={() => onLoad(item.inputs!)}>
+                    <Text style={s.actionBtnText}>Edit / View</Text>
+                  </TouchableOpacity>
+                ) : <View />}
+                <TouchableOpacity style={[s.actionBtn, s.actionBtnDelete]} onPress={() => deleteItem(item.id)}>
+                  <Text style={s.actionBtnDeleteText}>Delete</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           );
         })}
@@ -136,7 +144,11 @@ const s = StyleSheet.create({
   carName: { color: colors.text, fontSize: font.sizes.md, fontWeight: '700' },
   totalCostLine: { color: colors.primary, fontSize: font.sizes.sm, fontWeight: '600', marginTop: 2 },
   meta: { color: colors.textMuted, fontSize: font.sizes.xs, marginTop: 2 },
-  delete: { color: colors.textMuted, fontSize: font.sizes.lg, paddingLeft: spacing.sm },
+  cardActions: { flexDirection: 'row', justifyContent: 'space-between', marginTop: spacing.sm, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.sm },
+  actionBtn: { paddingVertical: 7, paddingHorizontal: 16, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface2 },
+  actionBtnText: { color: colors.textSecondary, fontSize: font.sizes.sm, fontWeight: '600' },
+  actionBtnDelete: { borderColor: colors.negative, backgroundColor: 'transparent' },
+  actionBtnDeleteText: { color: colors.negative, fontSize: font.sizes.sm, fontWeight: '600' },
   resultRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderTopWidth: 1, borderTopColor: colors.border },
   resultRowWinner: { backgroundColor: colors.primaryMuted, marginHorizontal: -spacing.md, paddingHorizontal: spacing.md, borderRadius: radius.sm },
   typeDot: { width: 8, height: 8, borderRadius: 4, marginRight: 8 },
