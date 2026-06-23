@@ -12,6 +12,18 @@ function fmt(n: number, dec = 0) { return n.toLocaleString('en-GB', { minimumFra
 function gbp(n: number) { return `£${fmt(Math.abs(n))}`; }
 function pence(n: number) { return `£${fmt(n, 2)}`; }
 
+function getDepositAmount(type: string, inputs: CarInputs): number {
+  const price = parseFloat(inputs.carPrice) || 0;
+  switch (type) {
+    case 'pcp': return parseFloat(inputs.pcpDeposit) || 0;
+    case 'hp': return parseFloat(inputs.hpDeposit) || 0;
+    case 'pch': return parseFloat(inputs.pchDeposit) || 0;
+    case 'loan': return Math.round(price * (parseFloat(inputs.loanDepositPct) || 0) / 100);
+    case 'salary': return parseFloat(inputs.ssDeposit) || 0;
+    default: return 0;
+  }
+}
+
 const TERMS = ['1', '2', '3', '4', '5'];
 const TAX_RATES: TaxRate[] = ['20', '40', '45'];
 
@@ -135,6 +147,8 @@ export function CalculatorScreen({ onSaved, initialInputs, editingId, onReset }:
               customPA={inputs.customDepreciationPA}
               onCustomY1={set('customDepreciationY1')}
               onCustomPA={set('customDepreciationPA')}
+              customResidualValue={inputs.customResidualValue ?? ''}
+              onCustomResidualValue={set('customResidualValue')}
             />
           </View>
         )}
@@ -207,7 +221,20 @@ export function CalculatorScreen({ onSaved, initialInputs, editingId, onReset }:
               <Text style={s.sectionTitle}>Bank Loan</Text>
             </View>
             <Text style={s.cardNote}>Borrow from your bank, own the car outright from day one. No mileage limits.</Text>
-            <InputField label="Loan Amount" value={inputs.loanAmount} onChangeText={set('loanAmount')} prefix="£" hint="Car price minus any cash deposit you're putting in" />
+            <SliderField
+              label="Deposit / Loan split"
+              value={inputs.loanDepositPct ?? '0'}
+              onChange={set('loanDepositPct')}
+              min={0}
+              max={50}
+              step={5}
+              format={v => {
+                const price = parseFloat(inputs.carPrice) || 0;
+                const dep = Math.round(price * v / 100);
+                const loan = price - dep;
+                return `${v}% dep · ${gbp(dep)} / ${gbp(loan)} loan`;
+              }}
+            />
             <InputField label="APR" value={inputs.loanApr} onChangeText={set('loanApr')} suffix="%" hint="Personal loan APR from your bank" />
             <TextInputField label="Provider (optional)" value={inputs.loanProvider} onChangeText={set('loanProvider')} placeholder="e.g. Barclays Personal Loan" />
             <TextInputField label="Provider URL (optional)" value={inputs.loanProviderUrl} onChangeText={set('loanProviderUrl')} placeholder="https://..." />
@@ -292,6 +319,9 @@ export function CalculatorScreen({ onSaved, initialInputs, editingId, onReset }:
                         <Text style={[s.providerText, r.providerUrl && s.providerLink]}>{r.provider}{r.providerUrl ? ' ↗' : ''}</Text>
                       </TouchableOpacity>
                     ) : null}
+                    {getDepositAmount(r.type, inputs) > 0 && (
+                      <Text style={s.depositNote}>Deposit required: {gbp(getDepositAmount(r.type, inputs))}</Text>
+                    )}
                   </View>
                   <Text style={s.resultTotal}>{gbp(r.grandTotal)}<Text style={s.resultTotalLabel}> total</Text></Text>
                 </View>
@@ -312,6 +342,12 @@ export function CalculatorScreen({ onSaved, initialInputs, editingId, onReset }:
                     </>
                   )}
                 </View>
+
+                {r.type === 'loan' && r.yearlyBreakdown.length > 0 && (
+                  <Text style={s.residualNote}>
+                    You own the car outright — estimated value at end of term: {gbp(r.yearlyBreakdown[r.yearlyBreakdown.length - 1].carValue)}
+                  </Text>
+                )}
 
                 <TouchableOpacity style={s.yearlyToggle} onPress={() => setShowYearly(showYearly === r.type ? null : r.type)}>
                   <Text style={s.yearlyToggleText}>Year-by-year breakdown {showYearly === r.type ? '▲' : '▼'}</Text>
@@ -410,6 +446,8 @@ const s = StyleSheet.create({
   resultTotal: { color: colors.text, fontSize: font.sizes.xl, fontWeight: '700' },
   resultTotalLabel: { color: colors.textSecondary, fontSize: font.sizes.sm, fontWeight: '400' },
 
+  depositNote: { color: colors.textMuted, fontSize: font.sizes.xs, marginTop: 2 },
+  residualNote: { color: colors.textMuted, fontSize: font.sizes.xs, fontStyle: 'italic', marginBottom: spacing.xs },
   resultGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginBottom: spacing.sm },
   cell: { width: '48%', backgroundColor: colors.surface2, borderRadius: radius.sm, padding: spacing.sm },
   cellLabel: { color: colors.textMuted, fontSize: font.sizes.xs, marginBottom: 2 },

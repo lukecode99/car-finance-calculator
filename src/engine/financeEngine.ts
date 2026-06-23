@@ -8,6 +8,13 @@ function n(s: string): number {
 
 function getDepreciationRates(inputs: CarInputs): { y1: number; pa: number } {
   if (inputs.depreciationPreset === 'custom') {
+    const residual = n(inputs.customResidualValue ?? '');
+    const price = n(inputs.carPrice);
+    const years = Math.max(1, Math.round(n(inputs.termYears)));
+    if (residual > 0 && price > 0 && residual < price) {
+      const r = 1 - Math.pow(residual / price, 1 / years);
+      return { y1: r, pa: r };
+    }
     return { y1: n(inputs.customDepreciationY1) / 100, pa: n(inputs.customDepreciationPA) / 100 };
   }
   const p = DEPRECIATION_PRESETS[inputs.depreciationPreset];
@@ -215,7 +222,9 @@ function calcPCH(inputs: CarInputs, termYears: number): FinanceResult | null {
 
 function calcLoan(inputs: CarInputs, termYears: number): FinanceResult | null {
   const price = n(inputs.carPrice);
-  const loanAmount = n(inputs.loanAmount);
+  const depositPct = n(inputs.loanDepositPct ?? '0');
+  const deposit = Math.round(price * depositPct / 100);
+  const loanAmount = Math.max(0, price - deposit);
   const apr = n(inputs.loanApr);
   const insurance = n(inputs.insurance);
   const roadTax = n(inputs.roadTax);
@@ -230,8 +239,6 @@ function calcLoan(inputs: CarInputs, termYears: number): FinanceResult | null {
   const monthly = monthlyPayment(loanAmount, apr, months);
   const totalPaid = monthly * months;
   const totalInterest = totalPaid - loanAmount;
-
-  const deposit = Math.max(0, price - loanAmount);
 
   const { y1, pa } = getDepreciationRates(inputs);
   const finalValue = carValueAtYear(price, termYears, y1, pa);

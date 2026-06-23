@@ -55,6 +55,7 @@ export interface CarInputs {
 
   // Bank Loan
   loanAmount: string;
+  loanDepositPct: string;
   loanApr: string;
   loanProvider: string;
   loanProviderUrl: string;
@@ -76,6 +77,7 @@ export interface CarInputs {
   depreciationPreset: DepreciationPreset;
   customDepreciationY1: string;
   customDepreciationPA: string;
+  customResidualValue: string;
 
   // Running costs (annual)
   insurance: string;
@@ -172,6 +174,7 @@ export const DEFAULT_INPUTS: CarInputs = {
   pchProviderUrl: '',
 
   loanAmount: '23918',
+  loanDepositPct: '0',
   loanApr: '8.9',
   loanProvider: '',
   loanProviderUrl: '',
@@ -191,6 +194,7 @@ export const DEFAULT_INPUTS: CarInputs = {
   depreciationPreset: 'high',
   customDepreciationY1: '30',
   customDepreciationPA: '15',
+  customResidualValue: '',
 
   insurance: '800',
   roadTax: '110',

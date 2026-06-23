@@ -91,7 +91,7 @@ function buildShareHtml(item: SavedComparison): string {
   const loanSection = (inp?.enableLoan) ? `
     <div class="section-title">Bank Loan</div>
     <div class="grid">
-      <div class="kv"><div class="kv-label">Loan amount</div><div class="kv-value">${gbpFull(inp.loanAmount)}</div></div>
+      <div class="kv"><div class="kv-label">Deposit</div><div class="kv-value">${inp.loanDepositPct || '0'}%</div></div>
       <div class="kv"><div class="kv-label">APR</div><div class="kv-value">${pct(inp.loanApr)}</div></div>
       ${inp.loanProvider ? `<div class="kv"><div class="kv-label">Provider</div><div class="kv-value">${inp.loanProvider}</div></div>` : ''}
     </div>` : '';
@@ -289,7 +289,7 @@ export function SavedScreen({ onLoad }: Props) {
                   </View>
                   {cheapest && (
                     <Text style={s.totalCostLine}>
-                      Total cost over {item.termYears} yr{item.termYears !== 1 ? 's' : ''}: {gbp(cheapest.grandTotal)}
+                      Total cost over {item.termYears} yr{item.termYears !== 1 ? 's' : ''}
                     </Text>
                   )}
                   <Text style={s.meta}>{dateFmt(item.savedAt)}</Text>
