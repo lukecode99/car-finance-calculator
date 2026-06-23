@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Alert, StyleSheet, Linking } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert, StyleSheet, Linking, Share } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, spacing, radius, font } from '../theme';
@@ -10,6 +10,43 @@ function gbp(n: number) { return `£${Math.round(Math.abs(n)).toLocaleString('en
 function dateFmt(iso: string) {
   const d = new Date(iso);
   return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+function shortLabel(r: FinanceResult) {
+  if (r.type === 'pch') return 'Lease';
+  if (r.type === 'loan') return 'Loan';
+  if (r.type === 'salary') return 'Salary';
+  return r.label;
+}
+
+function buildShareText(item: SavedComparison): string {
+  const cheapest = item.results.reduce<FinanceResult | null>((a, b) => !a || b.grandTotal < a.grandTotal ? b : a, null);
+  const mileage = parseInt(item.inputs?.annualMileage || '10000').toLocaleString('en-GB');
+  const div = '──────────────────────────';
+  const thin = '─';
+
+  const rows = item.results.map(r => {
+    const lbl = shortLabel(r).padEnd(7);
+    const total = gbp(r.grandTotal).padEnd(8);
+    return `${lbl}${total}  (${gbp(r.costPerMonth)}/mo all-in)`;
+  }).join('\n');
+
+  const bestLine = cheapest
+    ? `🏆 Best: ${shortLabel(cheapest)} — ${gbp(cheapest.grandTotal)} total (${gbp(cheapest.costPerMonth)}/mo)`
+    : '';
+
+  return [
+    `🚗 ${item.carName || 'Unnamed Car'} — Car Finance Comparison`,
+    div,
+    bestLine,
+    thin,
+    rows,
+    thin,
+    `Term: ${item.termYears} year${item.termYears !== 1 ? 's' : ''} | ${mileage} mi/yr`,
+    div,
+    'Compare your own car 👇',
+    'https://lukecode99.github.io/car-finance-calculator/',
+  ].filter(Boolean).join('\n');
 }
 
 interface Props { onLoad?: (inputs: CarInputs, savedId: string) => void; }
@@ -40,6 +77,14 @@ export function SavedScreen({ onLoad }: Props) {
         },
       },
     ]);
+  }
+
+  async function shareComparison(item: SavedComparison) {
+    try {
+      await Share.share({ message: buildShareText(item) });
+    } catch {
+      // share cancelled or unsupported
+    }
   }
 
   function openResult(r: FinanceResult) {
@@ -111,6 +156,9 @@ export function SavedScreen({ onLoad }: Props) {
                     <Text style={s.actionBtnText}>Edit / View</Text>
                   </TouchableOpacity>
                 ) : <View />}
+                <TouchableOpacity style={s.actionBtn} onPress={() => shareComparison(item)}>
+                  <Text style={s.actionBtnText}>Share ↗</Text>
+                </TouchableOpacity>
                 <TouchableOpacity style={[s.actionBtn, s.actionBtnDelete]} onPress={() => deleteItem(item.id)}>
                   <Text style={s.actionBtnDeleteText}>Delete</Text>
                 </TouchableOpacity>
