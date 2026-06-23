@@ -1,43 +1,80 @@
-export type FinanceType = 'pcp' | 'hp' | 'pch';
+export type FinanceType = 'pcp' | 'hp' | 'pch' | 'loan' | 'salary';
 export type DepreciationPreset = 'high' | 'medium' | 'low' | 'custom';
+export type TaxRate = '20' | '40' | '45';
 
 export interface CarInputs {
   // Car
   carName: string;
   carPrice: string;
+  annualMileage: string;
 
-  // Finance type
-  financeType: FinanceType;
-  termYears: string;          // 1–5
+  // Toggles — which options to show/compare
+  enablePcp: boolean;
+  enableHp: boolean;
+  enablePch: boolean;
+  enableLoan: boolean;
+  enableSalary: boolean;
 
-  // PCP / HP shared
-  deposit: string;
-  apr: string;                // annual %
-  // PCP only
-  balloon: string;            // guaranteed future value
-  // PCH only
-  pchDeposit: string;         // initial rental (months equivalent)
-  pchMonthly: string;         // monthly inc VAT
+  // Finance term (shared)
+  termYears: string;
+
+  // PCP
+  pcpDeposit: string;
+  pcpApr: string;
+  balloon: string;
+  pcpMileageIncluded: string;
+  pcpExcessPpm: string;   // pence per excess mile
+  pcpProvider: string;
+  pcpProviderUrl: string;
+
+  // HP (own deposit + APR)
+  hpDeposit: string;
+  hpApr: string;
+  hpProvider: string;
+  hpProviderUrl: string;
+
+  // PCH / Contract Hire
+  pchDeposit: string;
+  pchMonthly: string;
+  pchMileageIncluded: string;
+  pchExcessPpm: string;
+  pchProvider: string;
+  pchProviderUrl: string;
+
+  // Bank Loan
+  loanAmount: string;
+  loanApr: string;
+  loanProvider: string;
+  loanProviderUrl: string;
+
+  // Salary Sacrifice
+  ssDeposit: string;
+  ssP11d: string;
+  ssCo2: string;
+  ssMonthly: string;
+  ssInsuranceIncluded: boolean;
+  ssTaxRate: TaxRate;
+  ssProvider: string;
+  ssProviderUrl: string;
 
   // Depreciation
   depreciationPreset: DepreciationPreset;
-  customDepreciationY1: string;   // % year 1
-  customDepreciationPA: string;   // % per year after
+  customDepreciationY1: string;
+  customDepreciationPA: string;
 
   // Running costs (annual)
-  annualMileage: string;
   insurance: string;
   roadTax: string;
   maintenance: string;
-  tyresPerYear: string;       // £ per year
-  sellingCost: string;        // broker/dealer commission to sell at end (PCP/HP only)
+  tyresPerYear: string;
+  sellingCost: string;
 }
 
 export interface YearlyBreakdown {
   year: number;
   carValue: number;
   depreciation: number;
-  financePayments: number;    // capital + interest portion
+  financePayments: number;
   runningCosts: number;
   totalCost: number;
   cumulativeTotal: number;
@@ -54,8 +91,14 @@ export interface FinanceResult {
   sellingCost: number;
   grandTotal: number;
   costPerMile: number;
-  costPerMonth: number;       // all-in
+  costPerMonth: number;
   yearlyBreakdown: YearlyBreakdown[];
+  excessMileageCost?: number;
+  bikRate?: number;
+  monthlyBikTax?: number;
+  monthlyNetSacrifice?: number;
+  provider?: string;
+  providerUrl?: string;
 }
 
 export interface SavedComparison {
@@ -70,17 +113,54 @@ export interface SavedComparison {
 export const DEFAULT_INPUTS: CarInputs = {
   carName: '',
   carPrice: '26918',
-  financeType: 'pcp',
+  annualMileage: '10000',
+
+  enablePcp: true,
+  enableHp: true,
+  enablePch: true,
+  enableLoan: false,
+  enableSalary: false,
+
   termYears: '2',
-  deposit: '3000',
-  apr: '6.9',
+
+  pcpDeposit: '3000',
+  pcpApr: '6.9',
   balloon: '14000',
+  pcpMileageIncluded: '10000',
+  pcpExcessPpm: '7',
+  pcpProvider: '',
+  pcpProviderUrl: '',
+
+  hpDeposit: '3000',
+  hpApr: '6.9',
+  hpProvider: '',
+  hpProviderUrl: '',
+
   pchDeposit: '1713',
   pchMonthly: '173',
+  pchMileageIncluded: '10000',
+  pchExcessPpm: '10',
+  pchProvider: '',
+  pchProviderUrl: '',
+
+  loanAmount: '23918',
+  loanApr: '8.9',
+  loanProvider: '',
+  loanProviderUrl: '',
+
+  ssDeposit: '0',
+  ssP11d: '26918',
+  ssCo2: '120',
+  ssMonthly: '350',
+  ssInsuranceIncluded: false,
+  ssTaxRate: '20',
+  ssProvider: '',
+  ssProviderUrl: '',
+
   depreciationPreset: 'high',
   customDepreciationY1: '30',
   customDepreciationPA: '15',
-  annualMileage: '10000',
+
   insurance: '800',
   roadTax: '110',
   maintenance: '500',
@@ -88,7 +168,6 @@ export const DEFAULT_INPUTS: CarInputs = {
   sellingCost: '1250',
 };
 
-// UK average depreciation presets
 export const DEPRECIATION_PRESETS: Record<DepreciationPreset, { y1: number; pa: number; label: string; desc: string }> = {
   high:   { y1: 32, pa: 16, label: 'High',   desc: 'German premium / luxury (Audi, BMW, Mercedes)' },
   medium: { y1: 22, pa: 12, label: 'Medium',  desc: 'Mainstream cars (Ford, Vauxhall, Kia)' },

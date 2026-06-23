@@ -19,6 +19,8 @@ export const colors = {
   pcp: '#4FC3F7',
   hp: '#CE93D8',
   pch: '#FFB74D',
+  loan: '#69F0AE',
+  salary: '#F48FB1',
 };
 
 export const spacing = { xs: 4, sm: 8, md: 16, lg: 24, xl: 32 };

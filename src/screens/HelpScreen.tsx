@@ -16,7 +16,7 @@ const SECTIONS: Section[] = [
     bullets: [
       'Lower monthly payments than HP',
       'You don\'t own it until the balloon is paid',
-      'Mileage limits apply (excess charged per mile)',
+      'Mileage limits apply — excess charged per mile at end of term',
       'Best if you like changing car every 2–4 years',
     ],
   },
@@ -44,8 +44,40 @@ const SECTIONS: Section[] = [
     bullets: [
       'Often the lowest monthly cost',
       'No depreciation risk — return and walk away',
-      'Strict mileage limits and condition checks on return',
+      'Strict mileage limits and condition checks on return — excess charged per mile',
       'No ownership — nothing to sell',
+    ],
+  },
+  {
+    title: 'Bank Loan',
+    color: '#69F0AE',
+    paras: [
+      'You borrow a fixed sum from your bank (or another lender) and buy the car outright. The loan is unsecured — the lender has no claim on the car if you can\'t pay, unlike HP or PCP where the finance company owns the car during the term.',
+      'Interest rates on personal loans can be competitive, especially for good credit scores. The car is yours from day one with zero mileage restrictions.',
+    ],
+    bullets: [
+      'You own the car immediately — sell it whenever you like',
+      'No mileage limits or condition penalties',
+      'Can\'t hand the car back if circumstances change (unlike PCH)',
+      'Loan amount = car price minus any cash deposit you put in',
+      'Compare the total interest cost carefully against PCP — PCP looks cheaper monthly but the balloon obscures the true cost',
+    ],
+  },
+  {
+    title: 'Salary Sacrifice',
+    color: '#F48FB1',
+    paras: [
+      'Your employer leases a car and you give up a portion of your gross salary to cover the cost. Because the sacrifice comes out of pre-tax pay, you save Income Tax and National Insurance on the sacrificed amount — significantly reducing your true monthly outlay.',
+      'The Benefit in Kind (BIK) tax is the catch: HMRC charges you tax on the P11D value of the car at a rate based on its CO₂ emissions. Electric and low-emission vehicles attract very low BIK rates (3% for EVs in 2025/26), making salary sacrifice most attractive for those cars.',
+    ],
+    bullets: [
+      'BIK rate 2025/26: 3% for EVs, 15–37% for petrol/diesel',
+      'Tax saving: Income Tax + NI on sacrificed amount (8% NI for basic rate, 2% for higher)',
+      'Monthly BIK tax = P11D × BIK% × your tax rate ÷ 12',
+      'True monthly cost = gross sacrifice × (1 − tax − NI) + monthly BIK tax',
+      'Most beneficial for EVs at higher tax rates (40%+ taxpayers save most)',
+      'Insurance may or may not be included — check your employer\'s scheme',
+      'You don\'t own the car — it returns to the leasing company at the end',
     ],
   },
   {
@@ -59,16 +91,17 @@ const SECTIONS: Section[] = [
       'High (32% yr1, 16%/yr): Audi, BMW, Mercedes',
       'Medium (22% yr1, 12%/yr): Ford, Vauxhall, Kia',
       'Low (14% yr1, 8%/yr): Toyota, VW Golf, Mini',
-      'Contract Hire: you bear zero depreciation risk',
+      'Contract Hire / Salary Sacrifice: you bear zero depreciation risk',
     ],
   },
   {
     title: 'What This Calculator Shows',
     color: colors.textSecondary,
     paras: [
-      'The "Grand Total" is what you truly spend — finance cost (interest, deposit, balloon), depreciation of the asset, running costs (insurance, tax, servicing, tyres), and selling costs.',
-      '"All-in per month" divides the grand total by the number of months, giving a true apples-to-apples comparison across all three options.',
-      'Contract Hire totals show your actual cash out. PCP/HP totals show your net loss — they don\'t include the car\'s residual value, because that value only materialises when you sell.',
+      'The "Grand Total" is what you truly spend — finance cost (interest, deposits), depreciation of the asset, running costs (insurance, tax, servicing, tyres), selling costs, and any excess mileage charges.',
+      '"All-in per month" divides the grand total by the number of months, giving a true apples-to-apples comparison across all options.',
+      'For Salary Sacrifice, the grand total shows your after-tax net cost including the BIK tax charge — this is what it actually costs you from take-home pay.',
+      'Contract Hire and Salary Sacrifice totals show actual cash out. PCP/HP/Loan totals show your net loss (they don\'t include the car\'s residual value, because that value only materialises when you sell).',
     ],
   },
 ];
@@ -78,7 +111,7 @@ export function HelpScreen() {
     <SafeAreaView style={s.safe} edges={['top']}>
       <ScrollView contentContainerStyle={s.content}>
         <Text style={s.pageTitle}>Finance Guide</Text>
-        <Text style={s.intro}>Understanding PCP, HP and Contract Hire — and which one wins for you.</Text>
+        <Text style={s.intro}>Understanding PCP, HP, Contract Hire, Bank Loan and Salary Sacrifice — and which one wins for you.</Text>
 
         {SECTIONS.map(sec => (
           <View key={sec.title} style={s.section}>
