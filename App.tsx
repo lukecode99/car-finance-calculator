@@ -18,6 +18,10 @@ export default function App() {
     setTab('calc');
   }
 
+  function handleReset() {
+    setLoadedInputs(null);
+  }
+
   return (
     <SafeAreaProvider>
       <View style={s.root}>
@@ -25,9 +29,10 @@ export default function App() {
           {tab === 'calc' && (
             <CalculatorScreen
               key={loadedInputs?.key ?? 0}
-              onSaved={() => {}}
+              onSaved={() => setTab('saved')}
               initialInputs={loadedInputs?.inputs}
               editingId={loadedInputs?.savedId}
+              onReset={handleReset}
             />
           )}
           {tab === 'saved' && <SavedScreen onLoad={handleLoad} />}

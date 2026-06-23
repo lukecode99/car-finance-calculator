@@ -23,9 +23,9 @@ const OPTION_LABELS: { key: keyof Pick<CarInputs, 'enablePcp' | 'enableHp' | 'en
   { key: 'enableSalary', label: 'Salary Sacrifice' },
 ];
 
-interface Props { onSaved: () => void; initialInputs?: CarInputs; editingId?: string; }
+interface Props { onSaved: () => void; initialInputs?: CarInputs; editingId?: string; onReset?: () => void; }
 
-export function CalculatorScreen({ onSaved, initialInputs, editingId }: Props) {
+export function CalculatorScreen({ onSaved, initialInputs, editingId, onReset }: Props) {
   const [inputs, setInputs] = useState<CarInputs>(initialInputs ?? DEFAULT_INPUTS);
   const [showYearly, setShowYearly] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -73,8 +73,15 @@ export function CalculatorScreen({ onSaved, initialInputs, editingId }: Props) {
   return (
     <SafeAreaView style={s.safe} edges={['top']}>
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={s.content}>
-        <Text style={s.title}>Car Finance Calculator</Text>
-        <Text style={s.subtitle}>Compare PCP · HP · Lease/PCH · Bank Loan · Salary Sacrifice</Text>
+        <View style={s.titleRow}>
+          <View>
+            <Text style={s.title}>Car Finance Calculator</Text>
+            <Text style={s.subtitle}>Compare PCP · HP · Lease/PCH · Bank Loan · Salary Sacrifice</Text>
+          </View>
+          <TouchableOpacity style={s.resetBtn} onPress={() => { setInputs(DEFAULT_INPUTS); onReset?.(); }}>
+            <Text style={s.resetBtnText}>Reset</Text>
+          </TouchableOpacity>
+        </View>
 
         {/* Car Details */}
         <View style={s.card}>
@@ -353,8 +360,11 @@ function ResultCell({ label, value, highlight }: { label: string; value: string;
 const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   content: { padding: spacing.md },
+  titleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: spacing.md },
   title: { color: colors.text, fontSize: font.sizes.xl, fontWeight: '700', marginBottom: 2 },
-  subtitle: { color: colors.textSecondary, fontSize: font.sizes.sm, marginBottom: spacing.md },
+  subtitle: { color: colors.textSecondary, fontSize: font.sizes.sm },
+  resetBtn: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface2, marginTop: 4 },
+  resetBtnText: { color: colors.textSecondary, fontSize: font.sizes.sm, fontWeight: '600' },
 
   card: { backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.sm, borderWidth: 1, borderColor: colors.border },
   cardHeaderRow: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.sm },
