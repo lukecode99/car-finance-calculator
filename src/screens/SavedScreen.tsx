@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Alert, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert, StyleSheet, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, spacing, radius, font } from '../theme';
-import { SavedComparison, FinanceResult } from '../types';
+import { SavedComparison, FinanceResult, CarInputs } from '../types';
 
 function gbp(n: number) { return `£${Math.round(Math.abs(n)).toLocaleString('en-GB')}`; }
 function dateFmt(iso: string) {
@@ -11,7 +11,9 @@ function dateFmt(iso: string) {
   return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
-export function SavedScreen() {
+interface Props { onLoad?: (inputs: CarInputs) => void; }
+
+export function SavedScreen({ onLoad }: Props) {
   const [saved, setSaved] = useState<SavedComparison[]>([]);
 
   useEffect(() => {
@@ -47,6 +49,10 @@ export function SavedScreen() {
     ]);
   }
 
+  function openResult(r: FinanceResult) {
+    if (r.providerUrl) Linking.openURL(r.providerUrl);
+  }
+
   if (saved.length === 0) {
     return (
       <SafeAreaView style={s.safe} edges={['top']}>
@@ -74,26 +80,36 @@ export function SavedScreen() {
           return (
             <View key={item.id} style={s.card}>
               <View style={s.cardHeader}>
-                <View>
+                <TouchableOpacity style={s.cardTitleBlock} onPress={() => item.inputs && onLoad ? onLoad(item.inputs) : undefined} activeOpacity={item.inputs && onLoad ? 0.6 : 1}>
                   <Text style={s.carName}>{item.carName || 'Unnamed Car'}</Text>
-                  <Text style={s.meta}>{item.termYears} yr term · {dateFmt(item.savedAt)}</Text>
-                </View>
+                  {cheapest && (
+                    <Text style={s.totalCostLine}>
+                      Total cost over {item.termYears} yr{item.termYears !== 1 ? 's' : ''}: {gbp(cheapest.grandTotal)}
+                    </Text>
+                  )}
+                  <Text style={s.meta}>{dateFmt(item.savedAt)}{item.inputs && onLoad ? '  · tap to edit →' : ''}</Text>
+                </TouchableOpacity>
                 <TouchableOpacity onPress={() => deleteItem(item.id)}>
                   <Text style={s.delete}>✕</Text>
                 </TouchableOpacity>
               </View>
 
               {item.results.map(r => (
-                <View key={r.type} style={[s.resultRow, cheapest?.type === r.type && s.resultRowWinner]}>
+                <TouchableOpacity
+                  key={r.type}
+                  style={[s.resultRow, cheapest?.type === r.type && s.resultRowWinner]}
+                  onPress={() => openResult(r)}
+                  activeOpacity={r.providerUrl ? 0.6 : 1}
+                >
                   <View style={[s.typeDot, { backgroundColor: r.color }]} />
-                  <Text style={[s.resultLabel, { color: r.color }]}>{r.label}</Text>
+                  <Text style={[s.resultLabel, { color: r.color }]}>{r.label}{r.providerUrl ? ' ↗' : ''}</Text>
                   {cheapest?.type === r.type && <Text style={s.crown}>👑</Text>}
                   <View style={s.resultFlex} />
                   <View style={s.resultNums}>
                     <Text style={s.resultTotal}>{gbp(r.grandTotal)}</Text>
                     <Text style={s.resultSub}>{gbp(r.costPerMonth)}/mo all-in</Text>
                   </View>
-                </View>
+                </TouchableOpacity>
               ))}
             </View>
           );
@@ -116,13 +132,15 @@ const s = StyleSheet.create({
   emptyText: { color: colors.textSecondary, fontSize: font.sizes.sm, textAlign: 'center' },
   card: { backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.sm, borderWidth: 1, borderColor: colors.border },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: spacing.sm },
+  cardTitleBlock: { flex: 1 },
   carName: { color: colors.text, fontSize: font.sizes.md, fontWeight: '700' },
+  totalCostLine: { color: colors.primary, fontSize: font.sizes.sm, fontWeight: '600', marginTop: 2 },
   meta: { color: colors.textMuted, fontSize: font.sizes.xs, marginTop: 2 },
   delete: { color: colors.textMuted, fontSize: font.sizes.lg, paddingLeft: spacing.sm },
   resultRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderTopWidth: 1, borderTopColor: colors.border },
   resultRowWinner: { backgroundColor: colors.primaryMuted, marginHorizontal: -spacing.md, paddingHorizontal: spacing.md, borderRadius: radius.sm },
   typeDot: { width: 8, height: 8, borderRadius: 4, marginRight: 8 },
-  resultLabel: { fontSize: font.sizes.sm, fontWeight: '600', width: 90 },
+  resultLabel: { fontSize: font.sizes.sm, fontWeight: '600', width: 110 },
   crown: { fontSize: 14, marginLeft: 2 },
   resultFlex: { flex: 1 },
   resultNums: { alignItems: 'flex-end' },

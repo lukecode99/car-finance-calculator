@@ -23,10 +23,10 @@ const OPTION_LABELS: { key: keyof Pick<CarInputs, 'enablePcp' | 'enableHp' | 'en
   { key: 'enableSalary', label: 'Salary Sacrifice' },
 ];
 
-interface Props { onSaved: () => void; }
+interface Props { onSaved: () => void; initialInputs?: CarInputs; }
 
-export function CalculatorScreen({ onSaved }: Props) {
-  const [inputs, setInputs] = useState<CarInputs>(DEFAULT_INPUTS);
+export function CalculatorScreen({ onSaved, initialInputs }: Props) {
+  const [inputs, setInputs] = useState<CarInputs>(initialInputs ?? DEFAULT_INPUTS);
   const [showYearly, setShowYearly] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -55,6 +55,7 @@ export function CalculatorScreen({ onSaved }: Props) {
         carPrice: parseFloat(inputs.carPrice),
         termYears: parseInt(inputs.termYears),
         results,
+        inputs,
       };
       existing.unshift(entry);
       await AsyncStorage.setItem('saved_comparisons', JSON.stringify(existing.slice(0, 20)));

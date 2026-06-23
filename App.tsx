@@ -1,7 +1,8 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { colors, font } from './src/theme';
+import { CarInputs } from './src/types';
 import { CalculatorScreen } from './src/screens/CalculatorScreen';
 import { SavedScreen } from './src/screens/SavedScreen';
 import { HelpScreen } from './src/screens/HelpScreen';
@@ -10,14 +11,25 @@ type Tab = 'calc' | 'saved' | 'help';
 
 export default function App() {
   const [tab, setTab] = React.useState<Tab>('calc');
-  const savedRef = useRef<{ reload?: () => void }>({});
+  const [loadedInputs, setLoadedInputs] = React.useState<{ inputs: CarInputs; key: number } | null>(null);
+
+  function handleLoad(inputs: CarInputs) {
+    setLoadedInputs(prev => ({ inputs, key: (prev?.key ?? 0) + 1 }));
+    setTab('calc');
+  }
 
   return (
     <SafeAreaProvider>
       <View style={s.root}>
         <View style={s.screen}>
-          {tab === 'calc' && <CalculatorScreen onSaved={() => {}} />}
-          {tab === 'saved' && <SavedScreen />}
+          {tab === 'calc' && (
+            <CalculatorScreen
+              key={loadedInputs?.key ?? 0}
+              onSaved={() => {}}
+              initialInputs={loadedInputs?.inputs}
+            />
+          )}
+          {tab === 'saved' && <SavedScreen onLoad={handleLoad} />}
           {tab === 'help' && <HelpScreen />}
         </View>
         <View style={s.tabBar}>

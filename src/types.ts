@@ -123,6 +123,7 @@ export interface SavedComparison {
   carPrice: number;
   termYears: number;
   results: FinanceResult[];
+  inputs?: CarInputs;
 }
 
 export const DEFAULT_INPUTS: CarInputs = {
