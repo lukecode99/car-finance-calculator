@@ -74,7 +74,7 @@ export function CalculatorScreen({ onSaved, initialInputs, editingId, onReset }:
     <SafeAreaView style={s.safe} edges={['top']}>
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={s.content}>
         <View style={s.titleRow}>
-          <View>
+          <View style={{ flex: 1, marginRight: 8 }}>
             <Text style={s.title}>Car Finance Calculator</Text>
             <Text style={s.subtitle}>Compare PCP · HP · Lease/PCH · Bank Loan · Salary Sacrifice</Text>
           </View>
