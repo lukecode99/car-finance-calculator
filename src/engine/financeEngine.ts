@@ -240,9 +240,7 @@ function calcLoan(inputs: CarInputs, termYears: number): FinanceResult | null {
   const sellingCost = n(inputs.sellingCost);
   const mileage = n(inputs.annualMileage);
 
-  // Use deposit % slider when set, otherwise fall back to legacy loanAmount field
-  const loanDepositPctVal = n(inputs.loanDepositPct ?? '0');
-  const deposit = loanDepositPctVal > 0 ? Math.round(price * loanDepositPctVal / 100) : Math.max(0, price - n(inputs.loanAmount));
+  const deposit = Math.round(price * (inputs.loanDepositPct ?? 10) / 100);
   const loanAmount = price - deposit;
 
   if (loanAmount <= 0) return null;

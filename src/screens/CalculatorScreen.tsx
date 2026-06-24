@@ -211,16 +211,27 @@ export function CalculatorScreen({ onSaved, initialInputs, editingId, onReset }:
             <Text style={s.cardNote}>Borrow from your bank, own the car outright from day one. No mileage limits.</Text>
             <SliderField
               label="Deposit"
-              value={inputs.loanDepositPct ?? '10'}
-              onChange={set('loanDepositPct')}
-              min={0} max={50} step={5}
-              format={v => {
-                const price = parseFloat(inputs.carPrice) || 0;
-                const dep = Math.round(price * v / 100);
-                const loan = price - dep;
-                return `${v}% · £${dep.toLocaleString('en-GB')} dep / £${loan.toLocaleString('en-GB')} loan`;
-              }}
+              value={String(inputs.loanDepositPct ?? 10)}
+              onChange={v => setInputs(p => ({ ...p, loanDepositPct: parseInt(v) || 0 }))}
+              min={0} max={100} step={1}
+              format={v => `${v}%`}
             />
+            {(() => {
+              const price = parseFloat(inputs.carPrice) || 0;
+              const dep = Math.round(price * (inputs.loanDepositPct ?? 10) / 100);
+              return (
+                <>
+                  <View style={s.labelRow}>
+                    <Text style={s.fieldLabel}>Deposit</Text>
+                    <Text style={s.fieldLabel}>£{dep.toLocaleString('en-GB')}</Text>
+                  </View>
+                  <View style={s.labelRow}>
+                    <Text style={s.fieldLabel}>Loan amount</Text>
+                    <Text style={s.fieldLabel}>£{(price - dep).toLocaleString('en-GB')}</Text>
+                  </View>
+                </>
+              );
+            })()}
             <InputField label="APR" value={inputs.loanApr} onChangeText={set('loanApr')} suffix="%" hint="Personal loan APR from your bank" />
             <TextInputField label="Provider (optional)" value={inputs.loanProvider} onChangeText={set('loanProvider')} placeholder="e.g. Barclays Personal Loan" />
             <TextInputField label="Provider URL (optional)" value={inputs.loanProviderUrl} onChangeText={set('loanProviderUrl')} placeholder="https://..." />

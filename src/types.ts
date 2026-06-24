@@ -54,8 +54,7 @@ export interface CarInputs {
   pchProviderUrl: string;
 
   // Bank Loan
-  loanAmount: string;
-  loanDepositPct: string;
+  loanDepositPct: number;
   loanApr: string;
   loanProvider: string;
   loanProviderUrl: string;
@@ -175,8 +174,7 @@ export const DEFAULT_INPUTS: CarInputs = {
   pchProvider: '',
   pchProviderUrl: '',
 
-  loanAmount: '23918',
-  loanDepositPct: '10',
+  loanDepositPct: 10,
   loanApr: '8.9',
   loanProvider: '',
   loanProviderUrl: '',
