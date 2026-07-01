@@ -1,5 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert, Platform, Linking } from 'react-native';
+import * as Print from 'expo-print';
+import * as Sharing from 'expo-sharing';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, spacing, radius, font } from '../theme';
@@ -67,6 +69,103 @@ export function CalculatorScreen({ onSaved, initialInputs, editingId, onReset }:
       Alert.alert('Error', 'Could not save comparison.');
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleSharePDF() {
+    if (results.length === 0) return;
+    const carLabel = inputs.carName ? inputs.carName : 'Car';
+    const term = inputs.termYears;
+
+    const summaryRows = results.map(r => `
+      <tr>
+        <td style="padding:8px;border:1px solid #ddd;font-weight:bold">${r.label}</td>
+        <td style="padding:8px;border:1px solid #ddd;text-align:right">${gbp(r.costPerMonth)}/mo</td>
+        <td style="padding:8px;border:1px solid #ddd;text-align:right">${gbp(r.grandTotal)}</td>
+      </tr>`).join('');
+
+    const detailSections = results.map(r => {
+      const rows: string[] = [
+        `<tr><td>Monthly payment</td><td>${gbp(r.monthlyPayment)}</td></tr>`,
+        `<tr><td>All-in per month</td><td><strong>${gbp(r.costPerMonth)}</strong></td></tr>`,
+        `<tr><td>Finance cost</td><td>${gbp(r.totalFinanceCost)}</td></tr>`,
+      ];
+      if (r.type !== 'pch' && r.type !== 'salary') rows.push(`<tr><td>Depreciation</td><td>${gbp(r.totalDepreciation)}</td></tr>`);
+      rows.push(`<tr><td>Running costs</td><td>${gbp(r.totalRunningCosts)}</td></tr>`);
+      if (r.sellingCost > 0) rows.push(`<tr><td>Selling cost</td><td>${gbp(r.sellingCost)}</td></tr>`);
+      if ((r.excessMileageCost ?? 0) > 0) rows.push(`<tr><td>Excess mileage</td><td>${gbp(r.excessMileageCost!)}</td></tr>`);
+      if (r.type === 'salary' && r.bikRate !== undefined) {
+        rows.push(`<tr><td>BIK rate</td><td>${r.bikRate}%</td></tr>`);
+        rows.push(`<tr><td>Monthly BIK tax</td><td>${gbp(r.monthlyBikTax!)}</td></tr>`);
+      }
+      rows.push(`<tr style="background:#f0f0f0"><td><strong>Grand Total</strong></td><td><strong>${gbp(r.grandTotal)}</strong></td></tr>`);
+
+      const yearlyRows = r.yearlyBreakdown.map(y => `
+        <tr>
+          <td style="padding:4px 8px;border:1px solid #eee">${y.year}</td>
+          ${r.type !== 'pch' && r.type !== 'salary' ? `<td style="padding:4px 8px;border:1px solid #eee">${gbp(y.carValue)}</td>` : ''}
+          <td style="padding:4px 8px;border:1px solid #eee">${gbp(y.financePayments)}</td>
+          <td style="padding:4px 8px;border:1px solid #eee">${gbp(y.runningCosts)}</td>
+          <td style="padding:4px 8px;border:1px solid #eee"><strong>${gbp(y.cumulativeTotal)}</strong></td>
+        </tr>`).join('');
+
+      const yearlyHead = r.type !== 'pch' && r.type !== 'salary'
+        ? '<th>Yr</th><th>Value</th><th>Finance</th><th>Running</th><th>Cumulative</th>'
+        : '<th>Yr</th><th>Finance</th><th>Running</th><th>Cumulative</th>';
+
+      return `
+        <h2 style="margin-top:24px;border-bottom:2px solid #333;padding-bottom:4px">${r.label}</h2>
+        <table style="width:100%;border-collapse:collapse;margin-bottom:12px;font-size:13px">
+          ${rows.map(row => row.replace(/<tr>/, '<tr style="border-bottom:1px solid #eee">').replace(/<td>/g, '<td style="padding:6px 8px">').replace(/<\/td>/g, '</td>')).join('')}
+        </table>
+        <h3 style="font-size:13px;color:#555">Year-by-year breakdown</h3>
+        <table style="width:100%;border-collapse:collapse;font-size:12px">
+          <thead><tr style="background:#333;color:#fff">${yearlyHead.replace(/<th>/g, '<th style="padding:6px 8px;text-align:left">').replace(/<\/th>/g, '</th>')}</tr></thead>
+          <tbody>${yearlyRows}</tbody>
+        </table>`;
+    }).join('');
+
+    const html = `<!DOCTYPE html>
+<html><head><meta charset="utf-8">
+<title>Car Finance Comparison — ${carLabel}</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 0; padding: 24px; color: #000; background: #fff; font-size: 14px; }
+  h1 { font-size: 20px; margin-bottom: 4px; }
+  .meta { color: #555; font-size: 13px; margin-bottom: 20px; }
+  table { border-collapse: collapse; width: 100%; }
+  @media print { body { padding: 0; } }
+</style>
+</head><body>
+<h1>Car Finance Comparison</h1>
+<p class="meta">Car: <strong>${carLabel}</strong> &nbsp;|&nbsp; Term: <strong>${term} year${term !== '1' ? 's' : ''}</strong></p>
+
+<h2 style="font-size:15px;margin-bottom:8px">Summary</h2>
+<table style="margin-bottom:24px;font-size:13px">
+  <thead>
+    <tr style="background:#333;color:#fff">
+      <th style="padding:8px;text-align:left">Option</th>
+      <th style="padding:8px;text-align:right">All-in / month</th>
+      <th style="padding:8px;text-align:right">Grand Total</th>
+    </tr>
+  </thead>
+  <tbody>${summaryRows}</tbody>
+</table>
+
+${detailSections}
+
+<p style="margin-top:32px;font-size:11px;color:#999">Generated by Car Finance Calculator</p>
+</body></html>`;
+
+    try {
+      if (Platform.OS !== 'web') {
+        const { uri } = await Print.printToFileAsync({ html });
+        await Sharing.shareAsync(uri, { mimeType: 'application/pdf', dialogTitle: 'Share Car Finance Comparison' });
+      } else {
+        const w = window.open('', '_blank');
+        if (w) { w.document.write(html); w.document.close(); w.print(); }
+      }
+    } catch (e) {
+      Alert.alert('Error', 'Could not generate PDF.');
     }
   }
 
@@ -292,9 +391,14 @@ export function CalculatorScreen({ onSaved, initialInputs, editingId, onReset }:
           <View style={s.results}>
             <View style={s.resultsHeader}>
               <Text style={s.resultsTitle}>Results — {inputs.termYears} year{inputs.termYears !== '1' ? 's' : ''}</Text>
-              <TouchableOpacity style={s.saveBtn} onPress={saveComparison} disabled={saving}>
-                <Text style={s.saveBtnText}>{saving ? (editingId ? 'Updating…' : 'Saving…') : editingId ? '💾 Update' : '💾 Save'}</Text>
-              </TouchableOpacity>
+              <View style={{ flexDirection: 'row', gap: spacing.xs }}>
+                <TouchableOpacity style={s.saveBtn} onPress={handleSharePDF}>
+                  <Text style={s.saveBtnText}>↗ PDF</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={s.saveBtn} onPress={saveComparison} disabled={saving}>
+                  <Text style={s.saveBtnText}>{saving ? (editingId ? 'Updating…' : 'Saving…') : editingId ? '💾 Update' : '💾 Save'}</Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
             {cheapest && results.length > 1 && (
