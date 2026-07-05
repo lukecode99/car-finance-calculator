@@ -1,4 +1,5 @@
 export type FinanceType = 'pcp' | 'hp' | 'pch' | 'loan' | 'salary';
+export type FuelType = 'petrol' | 'diesel' | 'ev';
 export type DepreciationPreset = 'high' | 'medium' | 'low' | 'custom';
 export type TaxRate = '20' | '40' | '45';
 
@@ -78,6 +79,19 @@ export interface CarInputs {
   customDepreciationPA: string;
   customResidualValue: string;
 
+  // Fuel / electricity
+  fuelType: FuelType;
+  mpg: string;               // petrol/diesel
+  fuelPencePerLitre: string; // petrol/diesel
+  miPerKwh: string;          // EV
+  pencePerKwh: string;       // EV
+
+  // Fees, contribution & part-exchange (PCP/HP; part-ex also reduces a bank loan)
+  adminFee: string;          // admin/documentation fee, paid at inception
+  otpFee: string;            // option-to-purchase fee, added to the final payment
+  dealerContribution: string;// dealer deposit contribution — reduces financed amount, not the user's deposit
+  partExchange: string;      // part-exchange value — contributed like a deposit
+
   // Running costs (annual)
   insurance: string;
   roadTax: string;
@@ -116,6 +130,10 @@ export interface FinanceResult {
   pcpBuySellTotal?: number;
   pcpEquity?: number;        // projected market value − GMFV
   pcpScenario?: 'handback' | 'buysell';
+  totalAmountPayable?: number; // deposit + part-ex + monthlies (+ balloon) + fees — matches a dealer quote
+  annualFuelCost?: number;
+  feesTotal?: number;          // admin + option-to-purchase fees
+  dealerContribution?: number;
   bikRate?: number;
   monthlyBikTax?: number;
   monthlyNetSacrifice?: number;
@@ -201,6 +219,17 @@ export const DEFAULT_INPUTS: CarInputs = {
   customDepreciationY1: '30',
   customDepreciationPA: '15',
   customResidualValue: '',
+
+  fuelType: 'petrol',
+  mpg: '',
+  fuelPencePerLitre: '145',
+  miPerKwh: '',
+  pencePerKwh: '28',
+
+  adminFee: '0',
+  otpFee: '0',
+  dealerContribution: '0',
+  partExchange: '0',
 
   insurance: '800',
   roadTax: '110',

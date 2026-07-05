@@ -5,8 +5,8 @@ import * as Sharing from 'expo-sharing';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, spacing, radius, font } from '../theme';
-import { CarInputs, DEFAULT_INPUTS, DepreciationPreset, TaxRate, SavedComparison } from '../types';
-import { calcAll, getBikRate } from '../engine/financeEngine';
+import { CarInputs, DEFAULT_INPUTS, DepreciationPreset, FuelType, TaxRate, SavedComparison } from '../types';
+import { calcAll, getBikRate, getAnnualFuel } from '../engine/financeEngine';
 import { InputField, TextInputField, SliderField, IncludedToggle } from '../components/InputField';
 import { DepreciationSlider } from '../components/DepreciationSlider';
 
@@ -17,6 +17,11 @@ function pence(n: number) { return `£${fmt(n, 2)}`; }
 
 const TERMS = ['1', '2', '3', '4', '5'];
 const TAX_RATES: TaxRate[] = ['20', '40', '45'];
+const FUEL_TYPES: { key: FuelType; label: string }[] = [
+  { key: 'petrol', label: 'Petrol' },
+  { key: 'diesel', label: 'Diesel' },
+  { key: 'ev', label: 'Electric' },
+];
 
 const OPTION_LABELS: { key: keyof Pick<CarInputs, 'enablePcp' | 'enableHp' | 'enablePch' | 'enableLoan' | 'enableSalary'>; label: string }[] = [
   { key: 'enablePcp', label: 'PCP' },
@@ -45,6 +50,8 @@ export function CalculatorScreen({ onSaved, initialInputs, editingId, onReset }:
   const cheapest = results.length > 0 ? results.reduce((a, b) => a.grandTotal < b.grandTotal ? a : b) : null;
 
   const bikRate = useMemo(() => getBikRate(parseInt(inputs.ssCo2) || 0), [inputs.ssCo2]);
+
+  const annualFuel = useMemo(() => getAnnualFuel(inputs), [inputs]);
 
   async function saveComparison() {
     if (results.length === 0) return;
@@ -93,6 +100,10 @@ export function CalculatorScreen({ onSaved, initialInputs, editingId, onReset }:
       ];
       if (r.type !== 'pch' && r.type !== 'salary') rows.push(`<tr><td>Depreciation</td><td>${gbp(r.totalDepreciation)}</td></tr>`);
       rows.push(`<tr><td>Running costs</td><td>${gbp(r.totalRunningCosts)}</td></tr>`);
+      if ((r.annualFuelCost ?? 0) > 0) rows.push(`<tr><td>Fuel per year</td><td>${gbp(r.annualFuelCost!)}</td></tr>`);
+      if ((r.feesTotal ?? 0) > 0) rows.push(`<tr><td>Fees (admin + option to purchase)</td><td>${gbp(r.feesTotal!)}</td></tr>`);
+      if ((r.dealerContribution ?? 0) > 0) rows.push(`<tr><td>Dealer deposit contribution</td><td>−${gbp(r.dealerContribution!)}</td></tr>`);
+      if (r.totalAmountPayable !== undefined) rows.push(`<tr><td>Total amount payable</td><td>${gbp(r.totalAmountPayable)}</td></tr>`);
       if (r.sellingCost > 0) rows.push(`<tr><td>Selling cost</td><td>${gbp(r.sellingCost)}</td></tr>`);
       if ((r.excessMileageCost ?? 0) > 0) rows.push(`<tr><td>Excess mileage</td><td>${gbp(r.excessMileageCost!)}</td></tr>`);
       if (r.type === 'salary' && r.bikRate !== undefined) {
@@ -389,10 +400,51 @@ ${detailSections}
             hint={inputs.enableSalary && inputs.ssServiceIncluded ? 'Excluded from Salary Sacrifice total (included in scheme)' : undefined} />
           <InputField label="Tyres (annual allowance)" value={inputs.tyresPerYear} onChangeText={set('tyresPerYear')} prefix="£"
             hint={inputs.enableSalary && inputs.ssTyresIncluded ? 'Excluded from Salary Sacrifice total (included in scheme)' : undefined} />
+          <View style={s.labelRow}>
+            <Text style={s.fieldLabel}>Fuel / electricity</Text>
+          </View>
+          <View style={[s.pills, { marginBottom: spacing.sm }]}>
+            {FUEL_TYPES.map(({ key, label }) => (
+              <TouchableOpacity key={key} style={[s.pill, inputs.fuelType === key && s.pillActive]} onPress={() => setInputs(p => ({ ...p, fuelType: key }))}>
+                <Text style={[s.pillText, inputs.fuelType === key && s.pillTextActive]}>{label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          {inputs.fuelType === 'ev' ? (
+            <>
+              <InputField label="Efficiency" value={inputs.miPerKwh} onChangeText={set('miPerKwh')} suffix="mi/kWh" hint="Leave blank to exclude electricity from running costs" />
+              <InputField label="Electricity price" value={inputs.pencePerKwh} onChangeText={set('pencePerKwh')} suffix="p/kWh" />
+            </>
+          ) : (
+            <>
+              <InputField label="Fuel economy" value={inputs.mpg} onChangeText={set('mpg')} suffix="mpg" hint="Leave blank to exclude fuel from running costs" />
+              <InputField label="Fuel price" value={inputs.fuelPencePerLitre} onChangeText={set('fuelPencePerLitre')} suffix="p/L" />
+            </>
+          )}
+          {annualFuel > 0 && (
+            <Text style={s.cardNote}>
+              Estimated {inputs.fuelType === 'ev' ? 'electricity' : 'fuel'} cost: {gbp(annualFuel)}/yr at {fmt(parseFloat(inputs.annualMileage) || 0)} mi/yr — included in every option's running costs and cost per mile.
+            </Text>
+          )}
           {(inputs.enablePcp || inputs.enableHp || inputs.enableLoan) && (
             <InputField label="Selling Cost (PCP/HP/Loan only)" value={inputs.sellingCost} onChangeText={set('sellingCost')} prefix="£" hint="Dealer/broker commission when you sell at end of term" />
           )}
         </View>
+
+        {/* Fees & Part-Exchange */}
+        {(inputs.enablePcp || inputs.enableHp || inputs.enableLoan) && (
+          <View style={s.card}>
+            <Text style={s.sectionTitle}>Fees & Part-Exchange</Text>
+            <InputField label="Part-exchange value" value={inputs.partExchange} onChangeText={set('partExchange')} prefix="£" hint="Your current car's value — contributed like a deposit (PCP/HP/Loan)" />
+            {(inputs.enablePcp || inputs.enableHp) && (
+              <>
+                <InputField label="Admin / documentation fee" value={inputs.adminFee} onChangeText={set('adminFee')} prefix="£" hint="Paid at the start of the agreement (PCP/HP)" />
+                <InputField label="Option-to-purchase fee" value={inputs.otpFee} onChangeText={set('otpFee')} prefix="£" hint="Added to the final payment when you buy the car (PCP/HP)" />
+                <InputField label="Dealer deposit contribution" value={inputs.dealerContribution} onChangeText={set('dealerContribution')} prefix="£" hint="Reduces the amount financed — you don't pay this, so it doesn't add to your deposit" />
+              </>
+            )}
+          </View>
+        )}
 
         {/* Results */}
         {results.length > 0 && (
@@ -442,6 +494,10 @@ ${detailSections}
                   <ResultCell label="Finance cost" value={gbp(r.totalFinanceCost)} />
                   {r.type !== 'pch' && r.type !== 'salary' && <ResultCell label="Depreciation" value={gbp(r.totalDepreciation)} />}
                   <ResultCell label="Running costs" value={gbp(r.totalRunningCosts)} />
+                  {(r.annualFuelCost ?? 0) > 0 && <ResultCell label="Fuel per year" value={gbp(r.annualFuelCost!)} />}
+                  {(r.feesTotal ?? 0) > 0 && <ResultCell label="Fees (admin + OTP)" value={gbp(r.feesTotal!)} />}
+                  {(r.dealerContribution ?? 0) > 0 && <ResultCell label="Dealer contribution" value={`−${gbp(r.dealerContribution!)}`} />}
+                  {r.totalAmountPayable !== undefined && <ResultCell label="Total amount payable" value={gbp(r.totalAmountPayable)} />}
                   {r.sellingCost > 0 && <ResultCell label="Selling cost" value={gbp(r.sellingCost)} />}
                   {(r.excessMileageCost ?? 0) > 0 && <ResultCell label="Excess mileage" value={gbp(r.excessMileageCost!)} />}
                   {r.type === 'salary' && r.bikRate !== undefined && (
