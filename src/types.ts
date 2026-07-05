@@ -90,10 +90,11 @@ export interface YearlyBreakdown {
   year: number;
   carValue: number;
   depreciation: number;
-  financePayments: number;
+  financePayments: number;   // cash out: monthlies, plus deposit in year 1
   runningCosts: number;
+  endOfTerm: number;         // final-year settlement: balloon − sale + selling cost, or excess mileage (negative = money back)
   totalCost: number;
-  cumulativeTotal: number;
+  cumulativeTotal: number;   // running sum of cash flows — final year equals grandTotal
 }
 
 export interface FinanceResult {
@@ -110,6 +111,11 @@ export interface FinanceResult {
   costPerMonth: number;
   yearlyBreakdown: YearlyBreakdown[];
   excessMileageCost?: number;
+  // PCP end-of-term scenarios (mutually exclusive; grandTotal uses the cheaper)
+  pcpHandBackTotal?: number;
+  pcpBuySellTotal?: number;
+  pcpEquity?: number;        // projected market value − GMFV
+  pcpScenario?: 'handback' | 'buysell';
   bikRate?: number;
   monthlyBikTax?: number;
   monthlyNetSacrifice?: number;

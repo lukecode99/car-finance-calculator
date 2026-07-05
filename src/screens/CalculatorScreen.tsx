@@ -12,6 +12,7 @@ import { DepreciationSlider } from '../components/DepreciationSlider';
 
 function fmt(n: number, dec = 0) { return n.toLocaleString('en-GB', { minimumFractionDigits: dec, maximumFractionDigits: dec }); }
 function gbp(n: number) { return `£${fmt(Math.abs(n))}`; }
+function sgbp(n: number) { return n < 0 ? `−£${fmt(-n)}` : `£${fmt(n)}`; }
 function pence(n: number) { return `£${fmt(n, 2)}`; }
 
 const TERMS = ['1', '2', '3', '4', '5'];
@@ -98,20 +99,27 @@ export function CalculatorScreen({ onSaved, initialInputs, editingId, onReset }:
         rows.push(`<tr><td>BIK rate</td><td>${r.bikRate}%</td></tr>`);
         rows.push(`<tr><td>Monthly BIK tax</td><td>${gbp(r.monthlyBikTax!)}</td></tr>`);
       }
+      if (r.type === 'pcp' && r.pcpEquity !== undefined) {
+        rows.push(`<tr><td>Projected equity (market vs GMFV)</td><td>${r.pcpEquity < 0 ? '−' : '+'}${gbp(Math.trunc(Math.abs(r.pcpEquity)))}</td></tr>`);
+        rows.push(`<tr><td>End of term</td><td>${r.pcpScenario === 'buysell' ? 'Buy &amp; sell' : 'Hand back'} (cheaper) — hand back ${gbp(r.pcpHandBackTotal!)} / buy &amp; sell ${gbp(r.pcpBuySellTotal!)}</td></tr>`);
+      }
       rows.push(`<tr style="background:#f0f0f0"><td><strong>Grand Total</strong></td><td><strong>${gbp(r.grandTotal)}</strong></td></tr>`);
 
+      const hasEnd = r.yearlyBreakdown.some(y => (y.endOfTerm ?? 0) !== 0);
       const yearlyRows = r.yearlyBreakdown.map(y => `
         <tr>
           <td style="padding:4px 8px;border:1px solid #eee">${y.year}</td>
           ${r.type !== 'pch' && r.type !== 'salary' ? `<td style="padding:4px 8px;border:1px solid #eee">${gbp(y.carValue)}</td>` : ''}
           <td style="padding:4px 8px;border:1px solid #eee">${gbp(y.financePayments)}</td>
           <td style="padding:4px 8px;border:1px solid #eee">${gbp(y.runningCosts)}</td>
-          <td style="padding:4px 8px;border:1px solid #eee"><strong>${gbp(y.cumulativeTotal)}</strong></td>
+          ${hasEnd ? `<td style="padding:4px 8px;border:1px solid #eee">${(y.endOfTerm ?? 0) !== 0 ? sgbp(y.endOfTerm ?? 0) : '—'}</td>` : ''}
+          <td style="padding:4px 8px;border:1px solid #eee"><strong>${sgbp(y.cumulativeTotal)}</strong></td>
         </tr>`).join('');
 
+      const endHead = hasEnd ? '<th>End of term</th>' : '';
       const yearlyHead = r.type !== 'pch' && r.type !== 'salary'
-        ? '<th>Yr</th><th>Value</th><th>Finance</th><th>Running</th><th>Cumulative</th>'
-        : '<th>Yr</th><th>Finance</th><th>Running</th><th>Cumulative</th>';
+        ? `<th>Yr</th><th>Value</th><th>Finance</th><th>Running</th>${endHead}<th>Cumulative</th>`
+        : `<th>Yr</th><th>Finance</th><th>Running</th>${endHead}<th>Cumulative</th>`;
 
       return `
         <h2 style="margin-top:24px;border-bottom:2px solid #333;padding-bottom:4px">${r.label}</h2>
@@ -444,6 +452,12 @@ ${detailSections}
                   )}
                 </View>
 
+                {r.type === 'pcp' && r.pcpEquity !== undefined && (
+                  <Text style={s.residualNote}>
+                    Projected equity: {r.pcpEquity < 0 ? '−' : '+'}{gbp(Math.trunc(Math.abs(r.pcpEquity)))} (market value vs GMFV).{' '}
+                    End of term: {r.pcpScenario === 'buysell' ? 'buy & sell' : 'hand back'} is cheaper — hand back {gbp(r.pcpHandBackTotal!)} vs buy & sell {gbp(r.pcpBuySellTotal!)}.
+                  </Text>
+                )}
                 {r.type === 'loan' && r.loanResidualValue !== undefined && r.loanResidualValue > 0 && (
                   <Text style={s.residualNote}>You own the car outright — estimated value at end of term: {gbp(r.loanResidualValue)}</Text>
                 )}
@@ -452,26 +466,32 @@ ${detailSections}
                   <Text style={s.yearlyToggleText}>Year-by-year breakdown {showYearly === r.type ? '▲' : '▼'}</Text>
                 </TouchableOpacity>
 
-                {showYearly === r.type && (
-                  <View style={s.yearlyTable}>
-                    <View style={s.yearlyHeader}>
-                      <Text style={[s.yearlyCell, s.yearlyHeadText, { flex: 0.5 }]}>Yr</Text>
-                      {r.type !== 'pch' && r.type !== 'salary' && <Text style={[s.yearlyCell, s.yearlyHeadText]}>Value</Text>}
-                      <Text style={[s.yearlyCell, s.yearlyHeadText]}>Finance</Text>
-                      <Text style={[s.yearlyCell, s.yearlyHeadText]}>Running</Text>
-                      <Text style={[s.yearlyCell, s.yearlyHeadText]}>Cumulative</Text>
-                    </View>
-                    {r.yearlyBreakdown.map(y => (
-                      <View key={y.year} style={s.yearlyRow}>
-                        <Text style={[s.yearlyCell, { flex: 0.5 }]}>{y.year}</Text>
-                        {r.type !== 'pch' && r.type !== 'salary' && <Text style={s.yearlyCell}>{gbp(y.carValue)}</Text>}
-                        <Text style={s.yearlyCell}>{gbp(y.financePayments)}</Text>
-                        <Text style={s.yearlyCell}>{gbp(y.runningCosts)}</Text>
-                        <Text style={[s.yearlyCell, { color: colors.primary }]}>{gbp(y.cumulativeTotal)}</Text>
+                {showYearly === r.type && (() => {
+                  const hasEnd = r.yearlyBreakdown.some(y => (y.endOfTerm ?? 0) !== 0);
+                  return (
+                    <View style={s.yearlyTable}>
+                      <View style={s.yearlyHeader}>
+                        <Text style={[s.yearlyCell, s.yearlyHeadText, { flex: 0.5 }]}>Yr</Text>
+                        {r.type !== 'pch' && r.type !== 'salary' && <Text style={[s.yearlyCell, s.yearlyHeadText]}>Value</Text>}
+                        <Text style={[s.yearlyCell, s.yearlyHeadText]}>Finance</Text>
+                        <Text style={[s.yearlyCell, s.yearlyHeadText]}>Running</Text>
+                        {hasEnd && <Text style={[s.yearlyCell, s.yearlyHeadText]}>End of term</Text>}
+                        <Text style={[s.yearlyCell, s.yearlyHeadText]}>Cumulative</Text>
                       </View>
-                    ))}
-                  </View>
-                )}
+                      {r.yearlyBreakdown.map(y => (
+                        <View key={y.year} style={s.yearlyRow}>
+                          <Text style={[s.yearlyCell, { flex: 0.5 }]}>{y.year}</Text>
+                          {r.type !== 'pch' && r.type !== 'salary' && <Text style={s.yearlyCell}>{gbp(y.carValue)}</Text>}
+                          <Text style={s.yearlyCell}>{gbp(y.financePayments)}</Text>
+                          <Text style={s.yearlyCell}>{gbp(y.runningCosts)}</Text>
+                          {hasEnd && <Text style={s.yearlyCell}>{(y.endOfTerm ?? 0) !== 0 ? sgbp(y.endOfTerm ?? 0) : '—'}</Text>}
+                          <Text style={[s.yearlyCell, { color: colors.primary }]}>{sgbp(y.cumulativeTotal)}</Text>
+                        </View>
+                      ))}
+                      <Text style={s.tableNote}>Cash-flow view — year 1 includes the deposit and the final year settles the agreement, so the last cumulative figure matches the grand total.</Text>
+                    </View>
+                  );
+                })()}
               </View>
             ))}
           </View>
@@ -560,4 +580,5 @@ const s = StyleSheet.create({
   yearlyHeadText: { color: colors.textMuted, fontWeight: '700' },
   yearlyRow: { flexDirection: 'row', paddingVertical: 5, borderBottomWidth: 1, borderBottomColor: colors.border },
   yearlyCell: { flex: 1, color: colors.textSecondary, fontSize: font.sizes.xs, textAlign: 'right', paddingRight: 4 },
+  tableNote: { color: colors.textMuted, fontSize: font.sizes.xs, fontStyle: 'italic', marginTop: spacing.xs },
 });
