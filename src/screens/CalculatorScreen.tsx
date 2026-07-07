@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert, Platform, Linking } from 'react-native';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
+import * as Haptics from 'expo-haptics';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, spacing, radius, font } from '../theme';
@@ -71,6 +72,7 @@ export function CalculatorScreen({ onSaved, initialInputs, editingId, onReset }:
         ? existing.map(e => e.id === editingId ? entry : e)
         : [entry, ...existing].slice(0, 20);
       await AsyncStorage.setItem('saved_comparisons', JSON.stringify(updated));
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       Alert.alert(editingId ? 'Updated' : 'Saved', editingId ? 'Comparison updated.' : 'Comparison saved successfully.');
       onSaved();
     } catch {
@@ -179,6 +181,7 @@ ${detailSections}
       if (Platform.OS !== 'web') {
         const { uri } = await Print.printToFileAsync({ html });
         await Sharing.shareAsync(uri, { mimeType: 'application/pdf', dialogTitle: 'Share Car Finance Comparison' });
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       } else {
         const w = window.open('', '_blank');
         if (w) { w.document.write(html); w.document.close(); w.print(); }
