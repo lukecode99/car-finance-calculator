@@ -36,7 +36,7 @@ export function SavedScreen({ onLoad }: Props) {
       {
         text: 'Clear All', style: 'destructive',
         onPress: async () => {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
           await AsyncStorage.removeItem('saved_comparisons');
           setSaved([]);
         },
