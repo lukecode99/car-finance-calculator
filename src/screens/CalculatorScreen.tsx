@@ -72,7 +72,7 @@ export function CalculatorScreen({ onSaved, initialInputs, editingId, onReset }:
         ? existing.map(e => e.id === editingId ? entry : e)
         : [entry, ...existing].slice(0, 20);
       await AsyncStorage.setItem('saved_comparisons', JSON.stringify(updated));
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       Alert.alert(editingId ? 'Updated' : 'Saved', editingId ? 'Comparison updated.' : 'Comparison saved successfully.');
       onSaved();
     } catch {
