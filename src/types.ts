@@ -153,9 +153,13 @@ export interface SavedComparison {
   inputs?: CarInputs;
 }
 
+// Anything that can only come off the user's own quote starts empty — a
+// pre-filled deal reads as leftover test data. Market assumptions (APRs,
+// running costs, excess-mile rates, depreciation) stay: they're the estimates
+// the app exists to provide, and blanking them would silently zero the totals.
 export const DEFAULT_INPUTS: CarInputs = {
   carName: '',
-  carPrice: '26918',
+  carPrice: '',
   annualMileage: '10000',
 
   enablePcp: true,
@@ -166,9 +170,9 @@ export const DEFAULT_INPUTS: CarInputs = {
 
   termYears: '2',
 
-  pcpDeposit: '3000',
+  pcpDeposit: '',
   pcpApr: '6.9',
-  balloon: '14000',
+  balloon: '',
   pcpMileageIncluded: '10000',
   pcpExcessPpm: '7',
   pcpInsuranceIncluded: false,
@@ -178,7 +182,7 @@ export const DEFAULT_INPUTS: CarInputs = {
   pcpProvider: '',
   pcpProviderUrl: '',
 
-  hpDeposit: '3000',
+  hpDeposit: '',
   hpApr: '6.9',
   hpInsuranceIncluded: false,
   hpRoadTaxIncluded: false,
@@ -187,8 +191,8 @@ export const DEFAULT_INPUTS: CarInputs = {
   hpProvider: '',
   hpProviderUrl: '',
 
-  pchDeposit: '1713',
-  pchMonthly: '173',
+  pchDeposit: '',
+  pchMonthly: '',
   pchMileageIncluded: '10000',
   pchExcessPpm: '10',
   pchInsuranceIncluded: false,
@@ -204,9 +208,9 @@ export const DEFAULT_INPUTS: CarInputs = {
   loanProviderUrl: '',
 
   ssDeposit: '0',
-  ssP11d: '26918',
-  ssCo2: '120',
-  ssMonthly: '350',
+  ssP11d: '',
+  ssCo2: '',
+  ssMonthly: '',
   ssInsuranceIncluded: false,
   ssRoadTaxIncluded: true,
   ssServiceIncluded: false,

@@ -10,6 +10,7 @@ import { CarInputs, DEFAULT_INPUTS, DepreciationPreset, FuelType, TaxRate, Saved
 import { calcAll, getBikRate, getAnnualFuel } from '../engine/financeEngine';
 import { InputField, TextInputField, SliderField, IncludedToggle } from '../components/InputField';
 import { DepreciationSlider } from '../components/DepreciationSlider';
+import { CarLogo } from '../components/CarLogo';
 
 function fmt(n: number, dec = 0) { return n.toLocaleString('en-GB', { minimumFractionDigits: dec, maximumFractionDigits: dec }); }
 function gbp(n: number) { return `£${fmt(Math.abs(n))}`; }
@@ -195,7 +196,8 @@ ${detailSections}
     <SafeAreaView style={s.safe} edges={['top']}>
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={s.content}>
         <View style={s.titleRow}>
-          <View style={{ flex: 1, marginRight: 8 }}>
+          <CarLogo width={44} height={26} style={{ marginTop: 3 }} />
+          <View style={{ flex: 1, marginLeft: 10, marginRight: 8 }}>
             <Text style={s.title}>Car Finance Calculator</Text>
             <Text style={s.subtitle}>Compare PCP · HP · Lease/PCH · Bank Loan · Salary Sacrifice</Text>
           </View>
@@ -208,7 +210,7 @@ ${detailSections}
         <View style={s.card}>
           <Text style={s.sectionTitle}>Car Details</Text>
           <TextInputField label="Car Name / Model" value={inputs.carName} onChangeText={set('carName')} placeholder="e.g. Audi A4 1.4 TDI" />
-          <InputField label="Purchase Price (OTR)" value={inputs.carPrice} onChangeText={set('carPrice')} prefix="£" placeholder="26918" />
+          <InputField label="Purchase Price (OTR)" value={inputs.carPrice} onChangeText={set('carPrice')} prefix="£" placeholder="25,000" />
           <SliderField
             label="Expected Yearly Mileage"
             value={inputs.annualMileage}
@@ -271,7 +273,7 @@ ${detailSections}
             </View>
             <InputField label="Deposit" value={inputs.pcpDeposit} onChangeText={set('pcpDeposit')} prefix="£" />
             <InputField label="APR" value={inputs.pcpApr} onChangeText={set('pcpApr')} suffix="%" hint="Representative APR from dealer/lender" />
-            <InputField label="Balloon Payment (GMFV)" value={inputs.balloon} onChangeText={set('balloon')} prefix="£" hint="Guaranteed minimum future value at end of term" />
+            <InputField label="Balloon Payment (GMFV)" value={inputs.balloon} onChangeText={set('balloon')} prefix="£" hint="Guaranteed minimum future value at end of term — with no balloon, PCP is simply HP" />
             <InputField label="Mileage included per year" value={inputs.pcpMileageIncluded} onChangeText={set('pcpMileageIncluded')} suffix="mi" hint="Agreement annual mileage allowance" />
             <InputField label="Excess mileage rate" value={inputs.pcpExcessPpm} onChangeText={set('pcpExcessPpm')} suffix="p/mi" hint="Pence per excess mile charged at end of term" />
             <IncludedToggle label="Insurance" value={inputs.pcpInsuranceIncluded} onChange={setB('pcpInsuranceIncluded')} />
@@ -310,7 +312,7 @@ ${detailSections}
               <Text style={s.sectionTitle}>Lease / Contract Hire (PCH)</Text>
             </View>
             <InputField label="Initial Rental (deposit)" value={inputs.pchDeposit} onChangeText={set('pchDeposit')} prefix="£" hint="Typically 3–9 months upfront" />
-            <InputField label="Monthly Payment" value={inputs.pchMonthly} onChangeText={set('pchMonthly')} prefix="£" hint="Monthly inc. VAT" />
+            <InputField label="Monthly Payment" value={inputs.pchMonthly} onChangeText={set('pchMonthly')} prefix="£" hint="Monthly inc. VAT — from your lease quote. Leave blank to hide leasing from the comparison" />
             <InputField label="Mileage included per year" value={inputs.pchMileageIncluded} onChangeText={set('pchMileageIncluded')} suffix="mi" hint="Agreement annual mileage allowance" />
             <InputField label="Excess mileage rate" value={inputs.pchExcessPpm} onChangeText={set('pchExcessPpm')} suffix="p/mi" hint="Pence per excess mile charged at end of term" />
             <IncludedToggle label="Insurance" value={inputs.pchInsuranceIncluded} onChange={setB('pchInsuranceIncluded')} />
@@ -372,7 +374,7 @@ ${detailSections}
             <InputField label="Deposit" value={inputs.ssDeposit} onChangeText={set('ssDeposit')} prefix="£" hint="Upfront contribution (often £0)" />
             <InputField label="Monthly gross sacrifice" value={inputs.ssMonthly} onChangeText={set('ssMonthly')} prefix="£" hint="Amount deducted from gross salary each month" />
             <InputField label="P11D value" value={inputs.ssP11d} onChangeText={set('ssP11d')} prefix="£" hint="List price inc. options and delivery (excl. first-year VED)" />
-            <InputField label="CO₂ emissions" value={inputs.ssCo2} onChangeText={set('ssCo2')} suffix="g/km" hint={`BIK rate: ${bikRate}% (2025/26)`} />
+            <InputField label="CO₂ emissions" value={inputs.ssCo2} onChangeText={set('ssCo2')} suffix="g/km" hint={inputs.ssCo2 ? `BIK rate: ${bikRate}% (2025/26)` : 'BIK rate: enter CO₂ to calculate (2025/26)'} />
             <View style={s.labelRow}>
               <Text style={s.fieldLabel}>Income tax rate</Text>
             </View>
@@ -556,6 +558,15 @@ ${detailSections}
           </View>
         )}
 
+        {results.length === 0 && (
+          <View style={s.emptyState}>
+            <Text style={s.emptyTitle}>Enter a purchase price to compare</Text>
+            <Text style={s.emptyBody}>
+              Fill in the deposit, APR and monthly figures from your own quotes — anything left blank is simply left out of the comparison.
+            </Text>
+          </View>
+        )}
+
         <View style={{ height: 40 }} />
       </ScrollView>
     </SafeAreaView>
@@ -606,6 +617,10 @@ const s = StyleSheet.create({
   toggleBtnActive: { borderColor: colors.primary, backgroundColor: colors.primaryMuted },
   toggleBtnText: { color: colors.textSecondary, fontSize: font.sizes.xs, fontWeight: '600' },
   toggleBtnTextActive: { color: colors.primary },
+
+  emptyState: { backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.md, marginTop: spacing.xs, borderWidth: 1, borderColor: colors.border, alignItems: 'center' },
+  emptyTitle: { color: colors.text, fontSize: font.sizes.md, fontWeight: '700', marginBottom: 4, textAlign: 'center' },
+  emptyBody: { color: colors.textMuted, fontSize: font.sizes.sm, textAlign: 'center', lineHeight: 19 },
 
   results: { marginTop: spacing.xs },
   resultsHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.sm },

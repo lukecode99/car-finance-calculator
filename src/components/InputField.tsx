@@ -2,6 +2,26 @@ import React from 'react';
 import { View, Text, TextInput, TouchableOpacity, Platform, StyleSheet } from 'react-native';
 import { colors, spacing, radius, font } from '../theme';
 
+// State always holds raw digits — grouping is display-only, so nothing downstream
+// needs to know about commas. (financeEngine's n() strips them regardless.)
+export function toRaw(text: string) {
+  const cleaned = text.replace(/[^0-9.]/g, '');
+  const dot = cleaned.indexOf('.');
+  if (dot === -1) return cleaned;
+  // Keep the first decimal point, drop any later ones.
+  return cleaned.slice(0, dot + 1) + cleaned.slice(dot + 1).replace(/\./g, '');
+}
+
+// 26918 -> 26,918. Only the integer part is grouped, and a trailing '.' survives
+// so you can keep typing straight through it.
+export function group(raw: string) {
+  if (!raw) return '';
+  const dot = raw.indexOf('.');
+  const int = dot === -1 ? raw : raw.slice(0, dot);
+  const rest = dot === -1 ? '' : raw.slice(dot);
+  return int.replace(/\B(?=(\d{3})+(?!\d))/g, ',') + rest;
+}
+
 interface InputProps {
   label: string;
   value: string;
@@ -10,9 +30,12 @@ interface InputProps {
   suffix?: string;
   placeholder?: string;
   hint?: string;
+  /** Money and mileage fields group by default; rates (APR, mpg, p/L, p/mi) don't. */
+  thousands?: boolean;
 }
 
-export function InputField({ label, value, onChangeText, prefix, suffix, placeholder, hint }: InputProps) {
+export function InputField({ label, value, onChangeText, prefix, suffix, placeholder, hint, thousands }: InputProps) {
+  const grouped = thousands ?? (prefix === '£' || suffix === 'mi');
   return (
     <View style={styles.wrapper}>
       <Text style={styles.label}>{label}</Text>
@@ -21,8 +44,8 @@ export function InputField({ label, value, onChangeText, prefix, suffix, placeho
         {prefix ? <View style={styles.affix}><Text style={styles.affixText}>{prefix}</Text></View> : null}
         <TextInput
           style={[styles.input, prefix && styles.noLeftRadius, suffix && styles.noRightRadius]}
-          value={value}
-          onChangeText={onChangeText}
+          value={grouped ? group(value) : value}
+          onChangeText={t => onChangeText(grouped ? toRaw(t) : t)}
           keyboardType="decimal-pad"
           placeholder={placeholder ?? '0'}
           placeholderTextColor={colors.textMuted}

@@ -265,6 +265,12 @@ function calcHP(inputs: CarInputs, termYears: number): FinanceResult | null {
 function calcPCH(inputs: CarInputs, termYears: number): FinanceResult | null {
   const pchDeposit = n(inputs.pchDeposit);
   const pchMonthly = n(inputs.pchMonthly);
+
+  // A lease is only ever a quoted monthly — there's nothing to derive it from.
+  // Without one we'd emit a £0/mo card that sorts to the top as the cheapest
+  // option, so drop the card instead (same as calcSalary does).
+  if (pchMonthly <= 0) return null;
+
   const insurance = inputs.pchInsuranceIncluded ? 0 : n(inputs.insurance);
   const roadTax = inputs.pchRoadTaxIncluded ? 0 : n(inputs.roadTax);
   const maintenance = inputs.pchServiceIncluded ? 0 : n(inputs.maintenance);
