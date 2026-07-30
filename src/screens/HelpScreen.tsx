@@ -68,10 +68,12 @@ const SECTIONS: Section[] = [
     color: '#F48FB1',
     paras: [
       'Your employer leases a car and you give up a portion of your gross salary to cover the cost. Because the sacrifice comes out of pre-tax pay, you save Income Tax and National Insurance on the sacrificed amount — significantly reducing your true monthly outlay.',
-      'The Benefit in Kind (BIK) tax is the catch: HMRC charges you tax on the P11D value of the car at a rate based on its CO₂ emissions. Electric and low-emission vehicles attract very low BIK rates (3% for EVs in 2025/26), making salary sacrifice most attractive for those cars.',
+      'The Benefit in Kind (BIK) tax is the catch: HMRC charges you tax on the P11D value of the car at a rate based on its CO₂ emissions. Electric and low-emission vehicles attract very low BIK rates (4% for EVs in 2026/27), making salary sacrifice most attractive for those cars.',
+      'Plug-in hybrids are the exception: for anything emitting 1–50 g/km the rate is set by the car\'s electric-only range in miles, not by its CO₂ figure. A short-range PHEV can sit at 16% while a long-range one sits at 4%, so the calculator asks for the range rather than assuming.',
     ],
     bullets: [
-      'BIK rate 2025/26: 3% for EVs, 15–37% for petrol/diesel',
+      'BIK rate 2026/27: 4% for EVs, 17–37% for petrol/diesel',
+      'PHEVs (1–50 g/km) by electric range: 130+ mi 4%, 70–129 mi 7%, 40–69 mi 10%, 30–39 mi 14%, under 30 mi 16%',
       'Tax saving: Income Tax + NI on sacrificed amount (8% NI for basic rate, 2% for higher)',
       'Monthly BIK tax = P11D × BIK% × your tax rate ÷ 12',
       'True monthly cost = gross sacrifice × (1 − tax − NI) + monthly BIK tax',

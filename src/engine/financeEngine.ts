@@ -64,32 +64,49 @@ function monthlyPaymentWithBalloon(principal: number, balloon: number, apr: numb
   return (amortised * r * Math.pow(1 + r, months)) / (Math.pow(1 + r, months) - 1);
 }
 
-export function getBikRate(co2: number): number {
-  if (co2 === 0) return 3;       // EV (2025/26)
-  if (co2 <= 50) return 3;       // PHEV (simplified: ignores electric range)
-  if (co2 <= 54) return 15;
-  if (co2 <= 59) return 16;
-  if (co2 <= 64) return 17;
-  if (co2 <= 69) return 18;
-  if (co2 <= 74) return 19;
-  if (co2 <= 79) return 20;
-  if (co2 <= 84) return 21;
-  if (co2 <= 89) return 22;
-  if (co2 <= 94) return 23;
-  if (co2 <= 99) return 24;
-  if (co2 <= 104) return 25;
-  if (co2 <= 109) return 26;
-  if (co2 <= 114) return 27;
-  if (co2 <= 119) return 28;
-  if (co2 <= 124) return 29;
-  if (co2 <= 129) return 30;
-  if (co2 <= 134) return 31;
-  if (co2 <= 139) return 32;
-  if (co2 <= 144) return 33;
-  if (co2 <= 149) return 34;
-  if (co2 <= 154) return 35;
-  if (co2 <= 159) return 36;
-  return 37;
+// Company car appropriate percentages, tax year 2026/27.
+// Source: gov.uk "CO2 emissions tables of rates" (check-future-rates-for-petrol-
+// powered-and-hybrid-powered-company-cars) and 480: Appendix 2.
+//
+// Sub-75 g/km rose 1ppt from 2025/26; 75 g/km and above is frozen, stepping 1ppt
+// per 5 g/km from 21% to the 37% cap. The whole table moves every April — the
+// BIK_TAX_YEAR constant below is what the UI shows, keep the two in step.
+export const BIK_TAX_YEAR = '2026/27';
+
+// For 1-50 g/km the percentage is set by the car's ELECTRIC RANGE, not by CO2.
+// Range is in MILES (HMRC "electric range figure" — the WLTP EAER combined
+// figure from section 49.5.2 of the certificate of conformity). Getting the unit
+// wrong here is two bands out, so it is spelled out in the UI as well.
+const PHEV_BANDS: { minMiles: number; pct: number }[] = [
+  { minMiles: 130, pct: 4 },
+  { minMiles: 70, pct: 7 },
+  { minMiles: 40, pct: 10 },
+  { minMiles: 30, pct: 14 },
+  { minMiles: 0, pct: 16 },
+];
+
+/**
+ * Appropriate percentage for the salary-sacrifice BIK charge.
+ *
+ * Returns null when the answer genuinely isn't determined by the inputs: a
+ * 1-50 g/km car with no electric range given. Guessing a band there would put a
+ * wrong tax figure under a real-looking label — the caller drops the option
+ * instead and the UI asks for the range.
+ */
+export function getBikRate(co2: number, electricRangeMiles?: number): number | null {
+  if (co2 === 0) return 4;                       // zero-emission
+  if (co2 <= 50) {
+    if (!electricRangeMiles || electricRangeMiles <= 0) return null;
+    return PHEV_BANDS.find(b => electricRangeMiles >= b.minMiles)!.pct;
+  }
+  if (co2 <= 54) return 17;
+  if (co2 <= 59) return 18;
+  if (co2 <= 64) return 19;
+  if (co2 <= 69) return 20;
+  if (co2 <= 74) return 21;
+  // 75 g/km and above: frozen table, 21% at 75-79 rising 1ppt per 5 g/km.
+  if (co2 >= 155) return 37;
+  return 21 + Math.floor((co2 - 75) / 5);
 }
 
 function calcPCP(inputs: CarInputs, termYears: number): FinanceResult | null {
@@ -393,11 +410,14 @@ function calcSalary(inputs: CarInputs, termYears: number): FinanceResult | null 
   const taxRate = parseInt(inputs.ssTaxRate) / 100;
   // NI class 1: 8% for basic rate taxpayers, 2% for higher rate (above £50,270)
   const niRate = taxRate <= 0.20 ? 0.08 : 0.02;
-  const bikPct = getBikRate(ssCo2);
-  const bikRate = bikPct / 100;
+  const bikPct = getBikRate(ssCo2, n(inputs.ssElectricRange));
   const mileage = n(inputs.annualMileage);
 
   if (ssMonthlyGross <= 0) return null;
+  // A plug-in hybrid's BIK band comes from its electric range; without it there
+  // is no honest figure to show, so drop the option rather than pick a band.
+  if (bikPct === null) return null;
+  const bikRate = bikPct / 100;
 
   const months = termYears * 12;
 

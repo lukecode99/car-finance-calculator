@@ -7,7 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors, spacing, radius, font } from '../theme';
 import { CarInputs, DEFAULT_INPUTS, DepreciationPreset, FuelType, TaxRate, SavedComparison } from '../types';
-import { calcAll, getBikRate, getAnnualFuel } from '../engine/financeEngine';
+import { calcAll, getBikRate, getAnnualFuel, BIK_TAX_YEAR } from '../engine/financeEngine';
 import { InputField, TextInputField, SliderField, IncludedToggle } from '../components/InputField';
 import { DepreciationSlider } from '../components/DepreciationSlider';
 import { CarLogo } from '../components/CarLogo';
@@ -51,7 +51,19 @@ export function CalculatorScreen({ onSaved, initialInputs, editingId, onReset }:
 
   const cheapest = results.length > 0 ? results.reduce((a, b) => a.grandTotal < b.grandTotal ? a : b) : null;
 
-  const bikRate = useMemo(() => getBikRate(parseInt(inputs.ssCo2) || 0), [inputs.ssCo2]);
+  // 1-50 g/km is banded by electric range, so that field only appears when it's
+  // actually needed — and until it's filled in there is no rate to quote.
+  const co2 = parseInt(inputs.ssCo2) || 0;
+  const isPhevBand = !!inputs.ssCo2 && co2 >= 1 && co2 <= 50;
+  const bikRate = useMemo(
+    () => getBikRate(co2, parseFloat((inputs.ssElectricRange || '').replace(/,/g, ''))),
+    [co2, inputs.ssElectricRange],
+  );
+  const bikHint = !inputs.ssCo2
+    ? `BIK rate: enter CO₂ to calculate (${BIK_TAX_YEAR})`
+    : bikRate === null
+      ? `BIK rate: enter the electric-only range below (${BIK_TAX_YEAR})`
+      : `BIK rate: ${bikRate}% (${BIK_TAX_YEAR})`;
 
   const annualFuel = useMemo(() => getAnnualFuel(inputs), [inputs]);
 
@@ -374,7 +386,11 @@ ${detailSections}
             <InputField label="Deposit" value={inputs.ssDeposit} onChangeText={set('ssDeposit')} prefix="£" hint="Upfront contribution (often £0)" />
             <InputField label="Monthly gross sacrifice" value={inputs.ssMonthly} onChangeText={set('ssMonthly')} prefix="£" hint="Amount deducted from gross salary each month" />
             <InputField label="P11D value" value={inputs.ssP11d} onChangeText={set('ssP11d')} prefix="£" hint="List price inc. options and delivery (excl. first-year VED)" />
-            <InputField label="CO₂ emissions" value={inputs.ssCo2} onChangeText={set('ssCo2')} suffix="g/km" hint={inputs.ssCo2 ? `BIK rate: ${bikRate}% (2025/26)` : 'BIK rate: enter CO₂ to calculate (2025/26)'} />
+            <InputField label="CO₂ emissions" value={inputs.ssCo2} onChangeText={set('ssCo2')} suffix="g/km" hint={bikHint} />
+            {isPhevBand && (
+              <InputField label="Electric-only range" value={inputs.ssElectricRange} onChangeText={set('ssElectricRange')} suffix="mi" thousands={false}
+                hint="Required for plug-in hybrids — the band comes from range, not CO₂. Use the WLTP electric range on your order form or V5C (in miles)." />
+            )}
             <View style={s.labelRow}>
               <Text style={s.fieldLabel}>Income tax rate</Text>
             </View>

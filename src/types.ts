@@ -64,6 +64,7 @@ export interface CarInputs {
   ssDeposit: string;
   ssP11d: string;
   ssCo2: string;
+  ssElectricRange: string;  // miles, only used when CO2 is 1-50 g/km
   ssMonthly: string;
   ssInsuranceIncluded: boolean;
   ssRoadTaxIncluded: boolean;
@@ -210,6 +211,7 @@ export const DEFAULT_INPUTS: CarInputs = {
   ssDeposit: '0',
   ssP11d: '',
   ssCo2: '',
+  ssElectricRange: '',
   ssMonthly: '',
   ssInsuranceIncluded: false,
   ssRoadTaxIncluded: true,
@@ -236,7 +238,7 @@ export const DEFAULT_INPUTS: CarInputs = {
   partExchange: '0',
 
   insurance: '800',
-  roadTax: '110',
+  roadTax: '200',
   maintenance: '500',
   tyresPerYear: '100',
   sellingCost: '1250',
