@@ -33,7 +33,14 @@
       "bundler": "metro",
       "output": "single"
     },
-    "plugins": [],
+    "plugins": [
+      [
+        "react-native-google-mobile-ads",
+        {
+          "iosAppId": "ca-app-pub-3940256099942544~1458002511"
+        }
+      ]
+    ],
     "extra": {
       "eas": {
         "projectId": "5daeaaaa-362d-4fad-91d0-fab52c0c783c"
