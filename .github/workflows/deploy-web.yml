@@ -1,0 +1,39 @@
+name: Deploy Web to GitHub Pages
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: Build web
+        run: CI=1 npx expo export --platform web --output-dir dist
+
+      # The store listing points at privacy.html and support.html on this branch.
+      # They live in public/ so the export carries them; gh-pages is replaced
+      # wholesale by the step below, and anything only committed there is lost.
+      - name: Check the listing pages survived the export
+        run: test -f dist/privacy.html && test -f dist/support.html
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          force_orphan: false
