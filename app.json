@@ -19,8 +19,7 @@
       "bundleIdentifier": "com.lukeholder.carfinancecalc",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
-      },
-      "buildNumber": "4"
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -33,18 +32,7 @@
       "bundler": "metro",
       "output": "single"
     },
-    "experiments": {
-      "_comment": "GitHub Pages serves this repo from a subpath, so the web bundle has to be referenced from there — without baseUrl the export emits absolute /_expo/... URLs that 404 on Pages and leave a blank page.",
-      "baseUrl": "/car-finance-calculator"
-    },
-    "plugins": [
-      [
-        "react-native-google-mobile-ads",
-        {
-          "iosAppId": "ca-app-pub-9879821077971587~8449305381"
-        }
-      ]
-    ],
+    "plugins": [],
     "extra": {
       "eas": {
         "projectId": "5daeaaaa-362d-4fad-91d0-fab52c0c783c"

@@ -4,7 +4,7 @@ import { colors, spacing, radius, font } from '../theme';
 import { DepreciationPreset, DEPRECIATION_PRESETS } from '../types';
 import { InputField } from './InputField';
 
-const ORDER: DepreciationPreset[] = ['low', 'medium', 'high', 'custom'];
+const ORDER: DepreciationPreset[] = ['high', 'medium', 'low', 'custom'];
 
 interface Props {
   value: DepreciationPreset;
@@ -13,11 +13,9 @@ interface Props {
   customPA: string;
   onCustomY1: (v: string) => void;
   onCustomPA: (v: string) => void;
-  customResidual: string;
-  onCustomResidual: (v: string) => void;
 }
 
-export function DepreciationSlider({ value, onChange, customY1, customPA, onCustomY1, onCustomPA, customResidual, onCustomResidual }: Props) {
+export function DepreciationSlider({ value, onChange, customY1, customPA, onCustomY1, onCustomPA }: Props) {
   const idx = ORDER.indexOf(value);
   const info = DEPRECIATION_PRESETS[value];
 
@@ -73,7 +71,6 @@ export function DepreciationSlider({ value, onChange, customY1, customPA, onCust
       {/* Custom inputs */}
       {value === 'custom' && (
         <View style={{ marginTop: spacing.sm }}>
-          <InputField label="Estimated value at end of term (£)" value={customResidual} onChangeText={onCustomResidual} prefix="£" hint="Overrides Y1%/PA% below if entered" />
           <InputField label="Year 1 depreciation" value={customY1} onChangeText={onCustomY1} suffix="%" />
           <InputField label="Year 2+ per year" value={customPA} onChangeText={onCustomPA} suffix="%" />
         </View>

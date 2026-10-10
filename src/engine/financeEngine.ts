@@ -14,12 +14,6 @@ function getDepreciationRates(inputs: CarInputs): { y1: number; pa: number } {
   return { y1: p.y1 / 100, pa: p.pa / 100 };
 }
 
-// If a custom residual value is entered, override the final car value at term end
-function getCustomResidual(inputs: CarInputs): number | null {
-  const rv = n(inputs.customResidualValue ?? '');
-  return rv > 0 ? rv : null;
-}
-
 function carValueAtYear(price: number, year: number, y1Rate: number, paRate: number): number {
   if (year === 0) return price;
   let val = price * (1 - y1Rate);
@@ -27,86 +21,38 @@ function carValueAtYear(price: number, year: number, y1Rate: number, paRate: num
   return Math.max(val, 0);
 }
 
-// UK APR is an effective annual rate, so the monthly rate is the 12th root,
-// not APR/12.
-function monthlyRate(apr: number): number {
-  return Math.pow(1 + apr / 100, 1 / 12) - 1;
-}
-
-// Annual fuel/electricity cost from mileage. Opt-in — returns 0 until an
-// economy figure (mpg or mi/kWh) is entered. 1 imperial gallon = 4.546 L.
-export function getAnnualFuel(inputs: CarInputs): number {
-  const miles = n(inputs.annualMileage);
-  if (inputs.fuelType === 'ev') {
-    const miPerKwh = n(inputs.miPerKwh);
-    if (miPerKwh <= 0) return 0;
-    return (miles / miPerKwh) * (n(inputs.pencePerKwh) / 100);
-  }
-  const mpg = n(inputs.mpg);
-  if (mpg <= 0) return 0;
-  return (miles / mpg) * 4.546 * (n(inputs.fuelPencePerLitre) / 100);
-}
-
 function monthlyPayment(principal: number, apr: number, months: number): number {
   if (apr === 0) return principal / months;
-  const r = monthlyRate(apr);
+  const r = apr / 100 / 12;
   return (principal * r * Math.pow(1 + r, months)) / (Math.pow(1 + r, months) - 1);
 }
 
-// PCP: the balloon (GMFV) is deferred to the end of the term and accrues
-// interest for the whole agreement — it must not be subtracted from the
-// principal up front. Amortise principal minus the *present value* of the
-// balloon.
-function monthlyPaymentWithBalloon(principal: number, balloon: number, apr: number, months: number): number {
-  if (apr === 0) return (principal - balloon) / months;
-  const r = monthlyRate(apr);
-  const amortised = principal - balloon / Math.pow(1 + r, months);
-  return (amortised * r * Math.pow(1 + r, months)) / (Math.pow(1 + r, months) - 1);
-}
-
-// Company car appropriate percentages, tax year 2026/27.
-// Source: gov.uk "CO2 emissions tables of rates" (check-future-rates-for-petrol-
-// powered-and-hybrid-powered-company-cars) and 480: Appendix 2.
-//
-// Sub-75 g/km rose 1ppt from 2025/26; 75 g/km and above is frozen, stepping 1ppt
-// per 5 g/km from 21% to the 37% cap. The whole table moves every April — the
-// BIK_TAX_YEAR constant below is what the UI shows, keep the two in step.
-export const BIK_TAX_YEAR = '2026/27';
-
-// For 1-50 g/km the percentage is set by the car's ELECTRIC RANGE, not by CO2.
-// Range is in MILES (HMRC "electric range figure" — the WLTP EAER combined
-// figure from section 49.5.2 of the certificate of conformity). Getting the unit
-// wrong here is two bands out, so it is spelled out in the UI as well.
-const PHEV_BANDS: { minMiles: number; pct: number }[] = [
-  { minMiles: 130, pct: 4 },
-  { minMiles: 70, pct: 7 },
-  { minMiles: 40, pct: 10 },
-  { minMiles: 30, pct: 14 },
-  { minMiles: 0, pct: 16 },
-];
-
-/**
- * Appropriate percentage for the salary-sacrifice BIK charge.
- *
- * Returns null when the answer genuinely isn't determined by the inputs: a
- * 1-50 g/km car with no electric range given. Guessing a band there would put a
- * wrong tax figure under a real-looking label — the caller drops the option
- * instead and the UI asks for the range.
- */
-export function getBikRate(co2: number, electricRangeMiles?: number): number | null {
-  if (co2 === 0) return 4;                       // zero-emission
-  if (co2 <= 50) {
-    if (!electricRangeMiles || electricRangeMiles <= 0) return null;
-    return PHEV_BANDS.find(b => electricRangeMiles >= b.minMiles)!.pct;
-  }
-  if (co2 <= 54) return 17;
-  if (co2 <= 59) return 18;
-  if (co2 <= 64) return 19;
-  if (co2 <= 69) return 20;
-  if (co2 <= 74) return 21;
-  // 75 g/km and above: frozen table, 21% at 75-79 rising 1ppt per 5 g/km.
-  if (co2 >= 155) return 37;
-  return 21 + Math.floor((co2 - 75) / 5);
+export function getBikRate(co2: number): number {
+  if (co2 === 0) return 3;       // EV (2025/26)
+  if (co2 <= 50) return 3;       // PHEV (simplified: ignores electric range)
+  if (co2 <= 54) return 15;
+  if (co2 <= 59) return 16;
+  if (co2 <= 64) return 17;
+  if (co2 <= 69) return 18;
+  if (co2 <= 74) return 19;
+  if (co2 <= 79) return 20;
+  if (co2 <= 84) return 21;
+  if (co2 <= 89) return 22;
+  if (co2 <= 94) return 23;
+  if (co2 <= 99) return 24;
+  if (co2 <= 104) return 25;
+  if (co2 <= 109) return 26;
+  if (co2 <= 114) return 27;
+  if (co2 <= 119) return 28;
+  if (co2 <= 124) return 29;
+  if (co2 <= 129) return 30;
+  if (co2 <= 134) return 31;
+  if (co2 <= 139) return 32;
+  if (co2 <= 144) return 33;
+  if (co2 <= 149) return 34;
+  if (co2 <= 154) return 35;
+  if (co2 <= 159) return 36;
+  return 37;
 }
 
 function calcPCP(inputs: CarInputs, termYears: number): FinanceResult | null {
@@ -122,84 +68,50 @@ function calcPCP(inputs: CarInputs, termYears: number): FinanceResult | null {
   const mileage = n(inputs.annualMileage);
   const mileageIncluded = n(inputs.pcpMileageIncluded);
   const excessPpm = n(inputs.pcpExcessPpm);
-  const adminFee = n(inputs.adminFee);
-  const otpFee = n(inputs.otpFee);
-  const contribution = n(inputs.dealerContribution);
-  const partExchange = n(inputs.partExchange);
 
-  // Dealer contribution and part-exchange both reduce the amount financed;
-  // only the part-exchange is the customer's own money.
-  const financed = price - deposit - partExchange - contribution;
-  if (financed - balloon < 0) return null;
+  const financed = price - deposit - balloon;
+  if (financed < 0) return null;
 
   const months = termYears * 12;
-  const monthly = monthlyPaymentWithBalloon(financed, balloon, apr, months);
-  const totalInterest = monthly * months + balloon - financed;
+  const monthly = monthlyPayment(financed, apr, months);
+  const totalFinancePayments = monthly * months + deposit + balloon;
+  const totalInterest = totalFinancePayments - price;
 
   const { y1, pa } = getDepreciationRates(inputs);
-  const customResidual = getCustomResidual(inputs);
-  const finalValue = customResidual !== null ? customResidual : carValueAtYear(price, termYears, y1, pa);
-  const uniformRate = customResidual !== null && price > 0 ? 1 - Math.pow(customResidual / price, 1 / termYears) : null;
+  const finalValue = carValueAtYear(price, termYears, y1, pa);
+  const totalDepreciation = price - finalValue;
 
-  const fuel = getAnnualFuel(inputs);
-  const annualRunning = insurance + roadTax + maintenance + tyresPerYear + fuel;
+  const annualRunning = insurance + roadTax + maintenance + tyresPerYear;
   const totalRunning = annualRunning * termYears;
 
+  // Excess mileage cost
   const excessMilesPerYear = Math.max(0, mileage - mileageIncluded);
   const excessMileageCost = excessMilesPerYear * termYears * (excessPpm / 100);
 
-  // End of term: hand back (pay excess mileage, walk away — depreciation
-  // borne is capped at price − GMFV) or buy at the balloon and sell at market
-  // value (no excess mileage, but selling cost applies). These are mutually
-  // exclusive; the grand total uses the cheaper.
-  const marketValue = finalValue;
-  const equity = marketValue - balloon;
-  const upfront = deposit + partExchange + adminFee;
-  const handBackTotal = upfront + monthly * months + excessMileageCost + totalRunning;
-  const buySellTotal = upfront + monthly * months + balloon + otpFee - marketValue + sellingCost + totalRunning;
-  const scenario: 'handback' | 'buysell' = buySellTotal < handBackTotal ? 'buysell' : 'handback';
-
-  const scenarioExcess = scenario === 'handback' ? excessMileageCost : 0;
-  const scenarioSelling = scenario === 'buysell' ? sellingCost : 0;
-  const totalDepreciation = scenario === 'buysell' ? price - marketValue : price - balloon;
-
   const yearly: YearlyBreakdown[] = [];
-  let cumulative = 0;
-  let prevVal = price;
+  let cumulative = deposit;
   for (let yr = 1; yr <= termYears; yr++) {
-    const valEnd = uniformRate !== null
-      ? Math.max(0, price * Math.pow(1 - uniformRate, yr))
-      : carValueAtYear(price, yr, y1, pa);
-    const dep = prevVal - valEnd;
-    prevVal = valEnd;
-    const fin = monthly * 12 + (yr === 1 ? deposit + partExchange + adminFee : 0);
+    const valStart = carValueAtYear(price, yr - 1, y1, pa);
+    const valEnd = carValueAtYear(price, yr, y1, pa);
+    const dep = valStart - valEnd;
+    const fin = monthly * 12;
     const running = annualRunning;
-    const endOfTerm = yr === termYears
-      ? (scenario === 'buysell' ? balloon + otpFee - marketValue + sellingCost : excessMileageCost)
-      : 0;
-    const total = fin + running + endOfTerm;
-    cumulative += total;
-    yearly.push({ year: yr, carValue: valEnd, depreciation: dep, financePayments: fin, runningCosts: running, endOfTerm, totalCost: total, cumulativeTotal: cumulative });
+    const yearTotal = dep + fin + running;
+    cumulative += yearTotal;
+    yearly.push({ year: yr, carValue: valEnd, depreciation: dep, financePayments: fin, runningCosts: running, totalCost: yearTotal, cumulativeTotal: cumulative });
   }
 
-  const grandTotal = scenario === 'buysell' ? buySellTotal : handBackTotal;
+  const grandTotal = totalInterest + totalDepreciation + totalRunning + sellingCost + excessMileageCost;
   const totalMiles = mileage * termYears;
 
   return {
     type: 'pcp', label: 'PCP', color: colors.pcp,
     monthlyPayment: monthly, totalFinanceCost: totalInterest,
-    totalRunningCosts: totalRunning, totalDepreciation, sellingCost: scenarioSelling,
-    grandTotal, excessMileageCost: scenarioExcess,
-    pcpHandBackTotal: handBackTotal, pcpBuySellTotal: buySellTotal,
-    pcpEquity: equity, pcpScenario: scenario,
-    totalAmountPayable: deposit + partExchange + monthly * months + balloon + adminFee + otpFee,
-    annualFuelCost: fuel,
-    feesTotal: adminFee + otpFee,
-    dealerContribution: contribution,
+    totalRunningCosts: totalRunning, totalDepreciation, sellingCost,
+    grandTotal, excessMileageCost,
     costPerMile: totalMiles > 0 ? grandTotal / totalMiles : 0,
     costPerMonth: grandTotal / months,
     yearlyBreakdown: yearly,
-    depositRequired: deposit,
     provider: inputs.pcpProvider || undefined,
     providerUrl: inputs.pcpProviderUrl || undefined,
   };
@@ -215,52 +127,35 @@ function calcHP(inputs: CarInputs, termYears: number): FinanceResult | null {
   const tyresPerYear = inputs.hpTyresIncluded ? 0 : n(inputs.tyresPerYear);
   const sellingCost = n(inputs.sellingCost);
   const mileage = n(inputs.annualMileage);
-  const adminFee = n(inputs.adminFee);
-  const otpFee = n(inputs.otpFee);
-  const contribution = n(inputs.dealerContribution);
-  const partExchange = n(inputs.partExchange);
 
-  const financed = price - deposit - partExchange - contribution;
+  const financed = price - deposit;
   if (financed < 0) return null;
 
   const months = termYears * 12;
   const monthly = monthlyPayment(financed, apr, months);
-  const totalInterest = monthly * months - financed;
+  const totalPaid = monthly * months + deposit;
+  const totalInterest = totalPaid - price;
 
   const { y1, pa } = getDepreciationRates(inputs);
-  const customResidual = getCustomResidual(inputs);
-  const finalValue = customResidual !== null ? customResidual : carValueAtYear(price, termYears, y1, pa);
-  const uniformRate = customResidual !== null && price > 0 ? 1 - Math.pow(customResidual / price, 1 / termYears) : null;
+  const finalValue = carValueAtYear(price, termYears, y1, pa);
   const totalDepreciation = price - finalValue;
 
-  const fuel = getAnnualFuel(inputs);
-  const annualRunning = insurance + roadTax + maintenance + tyresPerYear + fuel;
+  const annualRunning = insurance + roadTax + maintenance + tyresPerYear;
   const totalRunning = annualRunning * termYears;
 
-  // Pure cash-flow table: deposit lands in year 1, the sale of the car
-  // (minus selling cost) is credited in the final year, so the cumulative
-  // column reconciles with the grand total instead of double-counting
-  // capital as both principal payments and depreciation.
   const yearly: YearlyBreakdown[] = [];
-  let cumulative = 0;
-  let prevValHP = price;
+  let cumulative = deposit;
   for (let yr = 1; yr <= termYears; yr++) {
-    const valEnd = uniformRate !== null
-      ? Math.max(0, price * Math.pow(1 - uniformRate, yr))
-      : carValueAtYear(price, yr, y1, pa);
-    const dep = prevValHP - valEnd;
-    prevValHP = valEnd;
-    const fin = monthly * 12 + (yr === 1 ? deposit + partExchange + adminFee : 0);
+    const valStart = carValueAtYear(price, yr - 1, y1, pa);
+    const valEnd = carValueAtYear(price, yr, y1, pa);
+    const dep = valStart - valEnd;
+    const fin = monthly * 12;
     const running = annualRunning;
-    const endOfTerm = yr === termYears ? sellingCost - finalValue + otpFee : 0;
-    const total = fin + running + endOfTerm;
-    cumulative += total;
-    yearly.push({ year: yr, carValue: valEnd, depreciation: dep, financePayments: fin, runningCosts: running, endOfTerm, totalCost: total, cumulativeTotal: cumulative });
+    cumulative += dep + fin + running;
+    yearly.push({ year: yr, carValue: valEnd, depreciation: dep, financePayments: fin, runningCosts: running, totalCost: dep + fin + running, cumulativeTotal: cumulative });
   }
 
-  // Fees add to the customer's cost; the dealer contribution is money the
-  // customer never pays (it only shrank the financed amount above).
-  const grandTotal = totalInterest + totalDepreciation + totalRunning + sellingCost + adminFee + otpFee - contribution;
+  const grandTotal = totalInterest + totalDepreciation + totalRunning + sellingCost;
   const totalMiles = mileage * termYears;
 
   return {
@@ -269,11 +164,6 @@ function calcHP(inputs: CarInputs, termYears: number): FinanceResult | null {
     totalRunningCosts: totalRunning, totalDepreciation, sellingCost,
     grandTotal, costPerMile: totalMiles > 0 ? grandTotal / totalMiles : 0,
     costPerMonth: grandTotal / months, yearlyBreakdown: yearly,
-    totalAmountPayable: deposit + partExchange + monthly * months + adminFee + otpFee,
-    annualFuelCost: fuel,
-    feesTotal: adminFee + otpFee,
-    dealerContribution: contribution,
-    depositRequired: deposit,
     provider: inputs.hpProvider || undefined,
     providerUrl: inputs.hpProviderUrl || undefined,
   };
@@ -282,12 +172,6 @@ function calcHP(inputs: CarInputs, termYears: number): FinanceResult | null {
 function calcPCH(inputs: CarInputs, termYears: number): FinanceResult | null {
   const pchDeposit = n(inputs.pchDeposit);
   const pchMonthly = n(inputs.pchMonthly);
-
-  // A lease is only ever a quoted monthly — there's nothing to derive it from.
-  // Without one we'd emit a £0/mo card that sorts to the top as the cheapest
-  // option, so drop the card instead (same as calcSalary does).
-  if (pchMonthly <= 0) return null;
-
   const insurance = inputs.pchInsuranceIncluded ? 0 : n(inputs.insurance);
   const roadTax = inputs.pchRoadTaxIncluded ? 0 : n(inputs.roadTax);
   const maintenance = inputs.pchServiceIncluded ? 0 : n(inputs.maintenance);
@@ -299,22 +183,19 @@ function calcPCH(inputs: CarInputs, termYears: number): FinanceResult | null {
   const months = termYears * 12;
   const totalLease = pchDeposit + pchMonthly * months;
 
-  const fuel = getAnnualFuel(inputs);
-  const annualRunning = insurance + roadTax + maintenance + tyresPerYear + fuel;
+  const annualRunning = insurance + roadTax + maintenance + tyresPerYear;
   const totalRunning = annualRunning * termYears;
 
   const excessMilesPerYear = Math.max(0, mileage - mileageIncluded);
   const excessMileageCost = excessMilesPerYear * termYears * (excessPpm / 100);
 
   const yearly: YearlyBreakdown[] = [];
-  let cumulative = 0;
+  let cumulative = pchDeposit;
   for (let yr = 1; yr <= termYears; yr++) {
-    const fin = pchMonthly * 12 + (yr === 1 ? pchDeposit : 0);
+    const fin = pchMonthly * 12;
     const running = annualRunning;
-    const endOfTerm = yr === termYears ? excessMileageCost : 0;
-    const total = fin + running + endOfTerm;
-    cumulative += total;
-    yearly.push({ year: yr, carValue: 0, depreciation: 0, financePayments: fin, runningCosts: running, endOfTerm, totalCost: total, cumulativeTotal: cumulative });
+    cumulative += fin + running;
+    yearly.push({ year: yr, carValue: 0, depreciation: 0, financePayments: fin, runningCosts: running, totalCost: fin + running, cumulativeTotal: cumulative + (yr === 1 ? pchDeposit : 0) });
   }
 
   const grandTotal = totalLease + totalRunning + excessMileageCost;
@@ -327,8 +208,6 @@ function calcPCH(inputs: CarInputs, termYears: number): FinanceResult | null {
     grandTotal, excessMileageCost,
     costPerMile: totalMiles > 0 ? grandTotal / totalMiles : 0,
     costPerMonth: grandTotal / months, yearlyBreakdown: yearly,
-    annualFuelCost: fuel,
-    depositRequired: pchDeposit,
     provider: inputs.pchProvider || undefined,
     providerUrl: inputs.pchProviderUrl || undefined,
   };
@@ -336,6 +215,7 @@ function calcPCH(inputs: CarInputs, termYears: number): FinanceResult | null {
 
 function calcLoan(inputs: CarInputs, termYears: number): FinanceResult | null {
   const price = n(inputs.carPrice);
+  const loanAmount = n(inputs.loanAmount);
   const apr = n(inputs.loanApr);
   const insurance = n(inputs.insurance);
   const roadTax = n(inputs.roadTax);
@@ -344,10 +224,6 @@ function calcLoan(inputs: CarInputs, termYears: number): FinanceResult | null {
   const sellingCost = n(inputs.sellingCost);
   const mileage = n(inputs.annualMileage);
 
-  const partExchange = n(inputs.partExchange);
-  const deposit = Math.round(price * (inputs.loanDepositPct ?? 10) / 100);
-  const loanAmount = price - deposit - partExchange;
-
   if (loanAmount <= 0) return null;
 
   const months = termYears * 12;
@@ -355,37 +231,29 @@ function calcLoan(inputs: CarInputs, termYears: number): FinanceResult | null {
   const totalPaid = monthly * months;
   const totalInterest = totalPaid - loanAmount;
 
+  const deposit = Math.max(0, price - loanAmount);
+
   const { y1, pa } = getDepreciationRates(inputs);
-  const customResidual = getCustomResidual(inputs);
-  const finalValue = customResidual !== null ? customResidual : carValueAtYear(price, termYears, y1, pa);
-  const uniformRate = customResidual !== null && price > 0 ? 1 - Math.pow(customResidual / price, 1 / termYears) : null;
+  const finalValue = carValueAtYear(price, termYears, y1, pa);
   const totalDepreciation = price - finalValue;
 
-  const fuel = getAnnualFuel(inputs);
-  const annualRunning = insurance + roadTax + maintenance + tyresPerYear + fuel;
+  const annualRunning = insurance + roadTax + maintenance + tyresPerYear;
   const totalRunning = annualRunning * termYears;
 
-  // Same pure cash-flow shape as HP: deposit in year 1, sale credited at end.
   const yearly: YearlyBreakdown[] = [];
-  let cumulative = 0;
-  let prevValLoan = price;
+  let cumulative = deposit;
   for (let yr = 1; yr <= termYears; yr++) {
-    const valEnd = uniformRate !== null
-      ? Math.max(0, price * Math.pow(1 - uniformRate, yr))
-      : carValueAtYear(price, yr, y1, pa);
-    const dep = prevValLoan - valEnd;
-    prevValLoan = valEnd;
-    const fin = monthly * 12 + (yr === 1 ? deposit + partExchange : 0);
+    const valStart = carValueAtYear(price, yr - 1, y1, pa);
+    const valEnd = carValueAtYear(price, yr, y1, pa);
+    const dep = valStart - valEnd;
+    const fin = monthly * 12;
     const running = annualRunning;
-    const endOfTerm = yr === termYears ? sellingCost - finalValue : 0;
-    const total = fin + running + endOfTerm;
-    cumulative += total;
-    yearly.push({ year: yr, carValue: valEnd, depreciation: dep, financePayments: fin, runningCosts: running, endOfTerm, totalCost: total, cumulativeTotal: cumulative });
+    cumulative += dep + fin + running;
+    yearly.push({ year: yr, carValue: valEnd, depreciation: dep, financePayments: fin, runningCosts: running, totalCost: dep + fin + running, cumulativeTotal: cumulative });
   }
 
   const grandTotal = totalInterest + totalDepreciation + totalRunning + sellingCost;
   const totalMiles = mileage * termYears;
-  const loanResidualValue = yearly.length > 0 ? Math.round(yearly[yearly.length - 1].carValue) : undefined;
 
   return {
     type: 'loan', label: 'Bank Loan', color: colors.loan,
@@ -393,10 +261,6 @@ function calcLoan(inputs: CarInputs, termYears: number): FinanceResult | null {
     totalRunningCosts: totalRunning, totalDepreciation, sellingCost,
     grandTotal, costPerMile: totalMiles > 0 ? grandTotal / totalMiles : 0,
     costPerMonth: grandTotal / months, yearlyBreakdown: yearly,
-    totalAmountPayable: deposit + partExchange + monthly * months,
-    annualFuelCost: fuel,
-    depositRequired: deposit,
-    loanResidualValue,
     provider: inputs.loanProvider || undefined,
     providerUrl: inputs.loanProviderUrl || undefined,
   };
@@ -410,14 +274,11 @@ function calcSalary(inputs: CarInputs, termYears: number): FinanceResult | null 
   const taxRate = parseInt(inputs.ssTaxRate) / 100;
   // NI class 1: 8% for basic rate taxpayers, 2% for higher rate (above £50,270)
   const niRate = taxRate <= 0.20 ? 0.08 : 0.02;
-  const bikPct = getBikRate(ssCo2, n(inputs.ssElectricRange));
+  const bikPct = getBikRate(ssCo2);
+  const bikRate = bikPct / 100;
   const mileage = n(inputs.annualMileage);
 
   if (ssMonthlyGross <= 0) return null;
-  // A plug-in hybrid's BIK band comes from its electric range; without it there
-  // is no honest figure to show, so drop the option rather than pick a band.
-  if (bikPct === null) return null;
-  const bikRate = bikPct / 100;
 
   const months = termYears * 12;
 
@@ -435,8 +296,7 @@ function calcSalary(inputs: CarInputs, termYears: number): FinanceResult | null 
   const roadTax = inputs.ssRoadTaxIncluded ? 0 : n(inputs.roadTax);
   const maintenance = inputs.ssServiceIncluded ? 0 : n(inputs.maintenance);
   const tyres = inputs.ssTyresIncluded ? 0 : n(inputs.tyresPerYear);
-  const fuel = getAnnualFuel(inputs);
-  const annualRunning = insurance + roadTax + maintenance + tyres + fuel;
+  const annualRunning = insurance + roadTax + maintenance + tyres;
   const totalRunning = annualRunning * termYears;
 
   // Upfront deposit net of tax/NI
@@ -449,13 +309,12 @@ function calcSalary(inputs: CarInputs, termYears: number): FinanceResult | null 
   const totalMiles = mileage * termYears;
 
   const yearly: YearlyBreakdown[] = [];
-  let cumulative = 0;
+  let cumulative = netDeposit;
   for (let yr = 1; yr <= termYears; yr++) {
-    const fin = effectiveMonthly * 12 + (yr === 1 ? netDeposit : 0);
+    const fin = effectiveMonthly * 12;
     const running = annualRunning;
-    const total = fin + running;
-    cumulative += total;
-    yearly.push({ year: yr, carValue: 0, depreciation: 0, financePayments: fin, runningCosts: running, endOfTerm: 0, totalCost: total, cumulativeTotal: cumulative });
+    cumulative += fin + running;
+    yearly.push({ year: yr, carValue: 0, depreciation: 0, financePayments: fin, runningCosts: running, totalCost: fin + running, cumulativeTotal: cumulative });
   }
 
   return {
@@ -466,9 +325,7 @@ function calcSalary(inputs: CarInputs, termYears: number): FinanceResult | null 
     grandTotal, costPerMile: totalMiles > 0 ? grandTotal / totalMiles : 0,
     costPerMonth: grandTotal / months, yearlyBreakdown: yearly,
     bikRate: bikPct,
-    annualFuelCost: fuel,
     monthlyBikTax, monthlyNetSacrifice,
-    depositRequired: ssDeposit,
     provider: inputs.ssProvider || undefined,
     providerUrl: inputs.ssProviderUrl || undefined,
   };

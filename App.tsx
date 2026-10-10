@@ -6,17 +6,12 @@ import { CarInputs } from './src/types';
 import { CalculatorScreen } from './src/screens/CalculatorScreen';
 import { SavedScreen } from './src/screens/SavedScreen';
 import { HelpScreen } from './src/screens/HelpScreen';
-import { AdBanner, initialiseAds } from './src/components/AdBanner';
 
 type Tab = 'calc' | 'saved' | 'help';
 
 export default function App() {
   const [tab, setTab] = React.useState<Tab>('calc');
   const [loadedInputs, setLoadedInputs] = React.useState<{ inputs: CarInputs; key: number; savedId?: string } | null>(null);
-
-  React.useEffect(() => {
-    initialiseAds().catch(() => {});
-  }, []);
 
   function handleLoad(inputs: CarInputs, savedId?: string) {
     setLoadedInputs(prev => ({ inputs, key: (prev?.key ?? 0) + 1, savedId }));
@@ -43,7 +38,6 @@ export default function App() {
           {tab === 'saved' && <SavedScreen onLoad={handleLoad} />}
           {tab === 'help' && <HelpScreen />}
         </View>
-        {tab !== 'help' && <AdBanner />}
         <View style={s.tabBar}>
           {([['calc', '⚡', 'Calculator'], ['saved', '📋', 'Saved'], ['help', '📖', 'Guide']] as [Tab, string, string][]).map(([t, icon, label]) => (
             <TouchableOpacity key={t} style={s.tab} onPress={() => setTab(t)}>

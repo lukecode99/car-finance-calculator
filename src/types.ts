@@ -1,5 +1,4 @@
 export type FinanceType = 'pcp' | 'hp' | 'pch' | 'loan' | 'salary';
-export type FuelType = 'petrol' | 'diesel' | 'ev';
 export type DepreciationPreset = 'high' | 'medium' | 'low' | 'custom';
 export type TaxRate = '20' | '40' | '45';
 
@@ -55,7 +54,7 @@ export interface CarInputs {
   pchProviderUrl: string;
 
   // Bank Loan
-  loanDepositPct: number;
+  loanAmount: string;
   loanApr: string;
   loanProvider: string;
   loanProviderUrl: string;
@@ -64,7 +63,6 @@ export interface CarInputs {
   ssDeposit: string;
   ssP11d: string;
   ssCo2: string;
-  ssElectricRange: string;  // miles, only used when CO2 is 1-50 g/km
   ssMonthly: string;
   ssInsuranceIncluded: boolean;
   ssRoadTaxIncluded: boolean;
@@ -78,20 +76,6 @@ export interface CarInputs {
   depreciationPreset: DepreciationPreset;
   customDepreciationY1: string;
   customDepreciationPA: string;
-  customResidualValue: string;
-
-  // Fuel / electricity
-  fuelType: FuelType;
-  mpg: string;               // petrol/diesel
-  fuelPencePerLitre: string; // petrol/diesel
-  miPerKwh: string;          // EV
-  pencePerKwh: string;       // EV
-
-  // Fees, contribution & part-exchange (PCP/HP; part-ex also reduces a bank loan)
-  adminFee: string;          // admin/documentation fee, paid at inception
-  otpFee: string;            // option-to-purchase fee, added to the final payment
-  dealerContribution: string;// dealer deposit contribution — reduces financed amount, not the user's deposit
-  partExchange: string;      // part-exchange value — contributed like a deposit
 
   // Running costs (annual)
   insurance: string;
@@ -105,11 +89,10 @@ export interface YearlyBreakdown {
   year: number;
   carValue: number;
   depreciation: number;
-  financePayments: number;   // cash out: monthlies, plus deposit in year 1
+  financePayments: number;
   runningCosts: number;
-  endOfTerm: number;         // final-year settlement: balloon − sale + selling cost, or excess mileage (negative = money back)
   totalCost: number;
-  cumulativeTotal: number;   // running sum of cash flows — final year equals grandTotal
+  cumulativeTotal: number;
 }
 
 export interface FinanceResult {
@@ -126,20 +109,9 @@ export interface FinanceResult {
   costPerMonth: number;
   yearlyBreakdown: YearlyBreakdown[];
   excessMileageCost?: number;
-  // PCP end-of-term scenarios (mutually exclusive; grandTotal uses the cheaper)
-  pcpHandBackTotal?: number;
-  pcpBuySellTotal?: number;
-  pcpEquity?: number;        // projected market value − GMFV
-  pcpScenario?: 'handback' | 'buysell';
-  totalAmountPayable?: number; // deposit + part-ex + monthlies (+ balloon) + fees — matches a dealer quote
-  annualFuelCost?: number;
-  feesTotal?: number;          // admin + option-to-purchase fees
-  dealerContribution?: number;
   bikRate?: number;
   monthlyBikTax?: number;
   monthlyNetSacrifice?: number;
-  depositRequired?: number;
-  loanResidualValue?: number;
   provider?: string;
   providerUrl?: string;
 }
@@ -154,13 +126,9 @@ export interface SavedComparison {
   inputs?: CarInputs;
 }
 
-// Anything that can only come off the user's own quote starts empty — a
-// pre-filled deal reads as leftover test data. Market assumptions (APRs,
-// running costs, excess-mile rates, depreciation) stay: they're the estimates
-// the app exists to provide, and blanking them would silently zero the totals.
 export const DEFAULT_INPUTS: CarInputs = {
   carName: '',
-  carPrice: '',
+  carPrice: '26918',
   annualMileage: '10000',
 
   enablePcp: true,
@@ -171,9 +139,9 @@ export const DEFAULT_INPUTS: CarInputs = {
 
   termYears: '2',
 
-  pcpDeposit: '',
+  pcpDeposit: '3000',
   pcpApr: '6.9',
-  balloon: '',
+  balloon: '14000',
   pcpMileageIncluded: '10000',
   pcpExcessPpm: '7',
   pcpInsuranceIncluded: false,
@@ -183,7 +151,7 @@ export const DEFAULT_INPUTS: CarInputs = {
   pcpProvider: '',
   pcpProviderUrl: '',
 
-  hpDeposit: '',
+  hpDeposit: '3000',
   hpApr: '6.9',
   hpInsuranceIncluded: false,
   hpRoadTaxIncluded: false,
@@ -192,8 +160,8 @@ export const DEFAULT_INPUTS: CarInputs = {
   hpProvider: '',
   hpProviderUrl: '',
 
-  pchDeposit: '',
-  pchMonthly: '',
+  pchDeposit: '1713',
+  pchMonthly: '173',
   pchMileageIncluded: '10000',
   pchExcessPpm: '10',
   pchInsuranceIncluded: false,
@@ -203,16 +171,15 @@ export const DEFAULT_INPUTS: CarInputs = {
   pchProvider: '',
   pchProviderUrl: '',
 
-  loanDepositPct: 10,
+  loanAmount: '23918',
   loanApr: '8.9',
   loanProvider: '',
   loanProviderUrl: '',
 
   ssDeposit: '0',
-  ssP11d: '',
-  ssCo2: '',
-  ssElectricRange: '',
-  ssMonthly: '',
+  ssP11d: '26918',
+  ssCo2: '120',
+  ssMonthly: '350',
   ssInsuranceIncluded: false,
   ssRoadTaxIncluded: true,
   ssServiceIncluded: false,
@@ -224,21 +191,9 @@ export const DEFAULT_INPUTS: CarInputs = {
   depreciationPreset: 'high',
   customDepreciationY1: '30',
   customDepreciationPA: '15',
-  customResidualValue: '',
-
-  fuelType: 'petrol',
-  mpg: '',
-  fuelPencePerLitre: '145',
-  miPerKwh: '',
-  pencePerKwh: '28',
-
-  adminFee: '0',
-  otpFee: '0',
-  dealerContribution: '0',
-  partExchange: '0',
 
   insurance: '800',
-  roadTax: '200',
+  roadTax: '110',
   maintenance: '500',
   tyresPerYear: '100',
   sellingCost: '1250',
