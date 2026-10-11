@@ -29,6 +29,10 @@ end
 test_target.add_dependency(app_target)
 
 test_target.build_configurations.each do |c|
+  # Without an explicit PRODUCT_NAME the xctest bundle builds as ".xctest"
+  # (empty basename); the arm64/x86_64 slices then both write to the same
+  # path and xcodebuild aborts with "Multiple commands produce .../.xctest".
+  c.build_settings['PRODUCT_NAME'] = TEST_NAME
   c.build_settings['TEST_TARGET_NAME'] = app_target.name
   c.build_settings['PRODUCT_BUNDLE_IDENTIFIER'] = 'com.lukeholder.carfinancecalc.uitests'
   c.build_settings['SWIFT_VERSION'] = '5.0'
