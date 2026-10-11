@@ -138,7 +138,7 @@ jobs:
           fastlane snapshot \
             --workspace "${{ steps.xc.outputs.workspace }}" \
             --scheme "${{ steps.xc.outputs.scheme }}" \
-            --devices "iPhone 16 Pro Max" \
+            --devices "iPhone 17 Pro Max" \
             --languages "en-GB" \
             --configuration "Release" \
             --output_directory "./screenshots_out" \
