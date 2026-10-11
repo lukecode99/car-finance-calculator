@@ -11,6 +11,7 @@ final class ScreenshotUITests: XCTestCase {
         continueAfterFailure = false
     }
 
+    @MainActor
     private func tapTab(_ app: XCUIApplication, x: CGFloat) {
         // Bottom tab bar sits ~97% down the screen; three equal thirds.
         let pt = app.coordinate(withNormalizedOffset: CGVector(dx: x, dy: 0.965))
@@ -18,6 +19,7 @@ final class ScreenshotUITests: XCTestCase {
         sleep(1)
     }
 
+    @MainActor
     func testScreenshots() throws {
         let app = XCUIApplication()
         setupSnapshot(app)
